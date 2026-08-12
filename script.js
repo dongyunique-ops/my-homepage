@@ -1,6 +1,17 @@
-// ========== OCR FUNCTIONALITY ==========
+// === TAB SWITCHING ===
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.panel');
 
-// DOM Elements
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+    });
+});
+
+// === ELEMENTS ===
 const uploadArea = document.getElementById('uploadArea');
 const imageInput = document.getElementById('imageInput');
 const imagePreview = document.getElementById('imagePreview');
@@ -10,88 +21,43 @@ const ocrProgress = document.getElementById('ocrProgress');
 const progressFill = document.getElementById('progressFill');
 const progressText = document.getElementById('progressText');
 const ocrResult = document.getElementById('ocrResult');
-const extractedText = document.getElementById('extractedText');
+const ocrText = document.getElementById('ocrText');
+const textInput = document.getElementById('textInput');
 const fontSelect = document.getElementById('fontSelect');
 const motionSelect = document.getElementById('motionSelect');
 const fontSizeRange = document.getElementById('fontSizeRange');
 const fontSizeValue = document.getElementById('fontSizeValue');
 const applyMotion = document.getElementById('applyMotion');
-const motionPreview = document.getElementById('motionPreview');
 const previewStage = document.getElementById('previewStage');
-const replayOcr = document.getElementById('replayOcr');
+const replayBtn = document.getElementById('replayBtn');
 
-let currentExtractedText = '';
-
-// Upload area click
+// === IMAGE UPLOAD ===
 uploadArea.addEventListener('click', () => imageInput.click());
-
-// Drag & Drop
-uploadArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadArea.classList.add('dragover');
-});
-
-uploadArea.addEventListener('dragleave', () => {
-    uploadArea.classList.remove('dragover');
-});
-
-uploadArea.addEventListener('drop', (e) => {
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', e => {
     e.preventDefault();
     uploadArea.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-        processImage(file);
-    }
+    if (file && file.type.startsWith('image/')) processImage(file);
 });
-
-// File input change
-imageInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        processImage(file);
-    }
-});
-
-// Remove image
-removeImg.addEventListener('click', () => {
-    resetOCR();
-});
-
-// Font size range
-fontSizeRange.addEventListener('input', (e) => {
-    fontSizeValue.textContent = `${e.target.value}rem`;
-});
-
-// Apply motion button
-applyMotion.addEventListener('click', () => {
-    applyMotionToText();
-});
-
-// Replay OCR motion
-replayOcr.addEventListener('click', () => {
-    applyMotionToText();
-});
+imageInput.addEventListener('change', e => { if (e.target.files[0]) processImage(e.target.files[0]); });
+removeImg.addEventListener('click', resetOCR);
 
 function resetOCR() {
     uploadArea.style.display = 'block';
     imagePreview.style.display = 'none';
     ocrProgress.style.display = 'none';
     ocrResult.style.display = 'none';
-    motionPreview.style.display = 'none';
-    previewImg.src = '';
     imageInput.value = '';
-    currentExtractedText = '';
 }
 
 function processImage(file) {
-    // Show preview
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
         previewImg.src = e.target.result;
         uploadArea.style.display = 'none';
         imagePreview.style.display = 'block';
-
-        // Start OCR
         performOCR(e.target.result);
     };
     reader.readAsDataURL(file);
@@ -100,306 +66,240 @@ function processImage(file) {
 async function performOCR(imageData) {
     ocrProgress.style.display = 'block';
     ocrResult.style.display = 'none';
-    motionPreview.style.display = 'none';
     progressFill.style.width = '0%';
-    progressText.textContent = '텍스트 인식 준비 중...';
+    progressFill.style.background = 'linear-gradient(90deg, #00d4ff, #667eea)';
+    progressText.textContent = '준비 중...';
 
     try {
         const result = await Tesseract.recognize(imageData, 'kor+eng', {
-            logger: (m) => {
+            logger: m => {
                 if (m.status === 'recognizing text') {
-                    const percent = Math.round(m.progress * 100);
-                    progressFill.style.width = `${percent}%`;
-                    progressText.textContent = `텍스트 인식 중... ${percent}%`;
+                    const pct = Math.round(m.progress * 100);
+                    progressFill.style.width = `${pct}%`;
+                    progressText.textContent = `텍스트 인식 중... ${pct}%`;
                 } else if (m.status === 'loading language traineddata') {
                     progressText.textContent = '한국어 데이터 로딩 중...';
                     progressFill.style.width = '20%';
                 }
             }
         });
-
         const text = result.data.text.trim();
         if (text) {
-            currentExtractedText = text;
-            extractedText.textContent = text;
+            ocrText.value = text;
             ocrProgress.style.display = 'none';
             ocrResult.style.display = 'block';
         } else {
-            progressText.textContent = '텍스트를 찾을 수 없습니다. 다른 이미지를 시도해주세요.';
+            progressText.textContent = '텍스트를 인식할 수 없습니다. 다른 이미지를 시도해주세요.';
             progressFill.style.width = '100%';
             progressFill.style.background = '#ff006e';
         }
-    } catch (error) {
-        progressText.textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+    } catch (err) {
+        progressText.textContent = '오류 발생. 다시 시도해주세요.';
         progressFill.style.background = '#ff006e';
-        console.error('OCR Error:', error);
     }
 }
 
+// === FONT SIZE ===
+fontSizeRange.addEventListener('input', e => { fontSizeValue.textContent = `${e.target.value}rem`; });
+
+// === APPLY MOTION ===
+applyMotion.addEventListener('click', applyMotionToText);
+replayBtn.addEventListener('click', applyMotionToText);
+
+function getCurrentText() {
+    const activeTab = document.querySelector('.tab.active').dataset.tab;
+    if (activeTab === 'image') {
+        return ocrText.value.trim();
+    }
+    return textInput.value.trim();
+}
+
 function applyMotionToText() {
-    // Read from editable div (user may have modified the text)
-    const editedText = extractedText.innerText.trim();
-    if (!editedText) return;
-    currentExtractedText = editedText;
+    const text = getCurrentText();
+    if (!text) return;
 
     const font = fontSelect.value;
     const motion = motionSelect.value;
     const fontSize = fontSizeRange.value;
-    const lines = currentExtractedText.split('\n').filter(l => l.trim());
+    const lines = text.split('\n').filter(l => l.trim());
 
-    // Clear stage
     previewStage.innerHTML = '';
-    motionPreview.style.display = 'block';
+    replayBtn.style.display = 'inline-block';
 
-    // Create motion elements for each line
-    lines.forEach((line, index) => {
+    lines.forEach((line, idx) => {
         const el = document.createElement('div');
         el.className = `motion-line ${font}`;
         el.style.fontSize = `${fontSize}rem`;
         el.textContent = line;
 
-        // Apply motion based on selection
-        switch (motion) {
-            case 'fade-in':
-                el.style.opacity = '0';
-                el.style.animation = `fadeIn 1.5s ease ${index * 0.2}s forwards`;
-                break;
-            case 'fade-in-up':
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(30px)';
-                el.style.animation = `fadeInUp 1.5s ease ${index * 0.2}s forwards`;
-                break;
-            case 'fade-in-scale':
-                el.style.opacity = '0';
-                el.style.animation = `fadeInScale 1.5s ease ${index * 0.2}s forwards`;
-                break;
-            case 'slide-left':
-                el.style.opacity = '0';
-                el.style.animation = `slideLeft 1s ease ${index * 0.2}s forwards`;
-                break;
-            case 'slide-right':
-                el.style.opacity = '0';
-                el.style.animation = `slideRight 1s ease ${index * 0.2}s forwards`;
-                break;
-            case 'typing-effect':
-                el.style.overflow = 'hidden';
-                el.style.whiteSpace = 'nowrap';
-                el.style.borderRight = '3px solid #00d4ff';
-                el.style.width = '0';
-                el.style.animation = `typing 3s steps(${line.length}) ${index * 3}s forwards, blink 0.7s step-end infinite`;
-                break;
-            case 'bounce-effect':
-                el.textContent = '';
-                line.split('').forEach((char, i) => {
-                    const span = document.createElement('span');
-                    span.textContent = char === ' ' ? '\u00A0' : char;
-                    span.className = 'bounce-char';
-                    span.style.animationDelay = `${(index * line.length + i) * 0.05}s`;
-                    el.appendChild(span);
-                });
-                break;
-            case 'wave-effect':
-                el.textContent = '';
-                line.split('').forEach((char, i) => {
-                    const span = document.createElement('span');
-                    span.textContent = char === ' ' ? '\u00A0' : char;
-                    span.className = 'wave-char';
-                    span.style.animationDelay = `${i * 0.08}s`;
-                    el.appendChild(span);
-                });
-                break;
-            case 'rubber-band':
-                el.textContent = '';
-                line.split('').forEach((char, i) => {
-                    const span = document.createElement('span');
-                    span.textContent = char === ' ' ? '\u00A0' : char;
-                    span.className = 'rubber-char';
-                    span.style.animationDelay = `${(index * line.length + i) * 0.06}s`;
-                    el.appendChild(span);
-                });
-                break;
-            case 'flip-effect':
-                el.textContent = '';
-                el.style.perspective = '800px';
-                line.split('').forEach((char, i) => {
-                    const span = document.createElement('span');
-                    span.textContent = char === ' ' ? '\u00A0' : char;
-                    span.className = 'flip-char';
-                    span.style.animationDelay = `${(index * line.length + i) * 0.06}s`;
-                    el.appendChild(span);
-                });
-                break;
-            case 'jelly-effect':
-                el.textContent = '';
-                line.split('').forEach((char, i) => {
-                    const span = document.createElement('span');
-                    span.textContent = char === ' ' ? '\u00A0' : char;
-                    span.className = 'jelly-char';
-                    span.style.animationDelay = `${(index * line.length + i) * 0.05}s`;
-                    el.appendChild(span);
-                });
-                break;
-            case 'scatter-effect':
-                el.textContent = '';
-                line.split('').forEach((char, i) => {
-                    const span = document.createElement('span');
-                    span.textContent = char === ' ' ? '\u00A0' : char;
-                    span.className = 'scatter-char';
-                    span.style.setProperty('--scatter-x', `${(Math.random() - 0.5) * 200}px`);
-                    span.style.setProperty('--scatter-y', `${(Math.random() - 0.5) * 200}px`);
-                    span.style.setProperty('--scatter-r', `${(Math.random() - 0.5) * 720}deg`);
-                    span.style.animationDelay = `${(index * line.length + i) * 0.04}s`;
-                    el.appendChild(span);
-                });
-                break;
-            case 'spin-effect':
-                el.textContent = '';
-                line.split('').forEach((char, i) => {
-                    const span = document.createElement('span');
-                    span.textContent = char === ' ' ? '\u00A0' : char;
-                    span.className = 'spin-char';
-                    span.style.animationDelay = `${(index * line.length + i) * 0.07}s`;
-                    el.appendChild(span);
-                });
-                break;
-            case 'neon-effect':
-                el.classList.add('neon-text');
-                break;
-            case 'blur-reveal':
-                el.style.opacity = '0';
-                el.classList.add('blur-reveal-text');
-                el.style.animationDelay = `${index * 0.3}s`;
-                break;
-            case 'gradient-wave':
-                el.classList.add('gradient-wave-text');
-                break;
-            case 'shadow-dance':
-                el.classList.add('shadow-dance-text');
-                el.style.animationDelay = `${index * 0.2}s`;
-                break;
-            case 'shake-effect':
-                el.classList.add('shake-text');
-                el.style.animationDelay = `${index * 0.15}s`;
-                break;
-            case 'glitch-effect':
-                el.className += ' glitch';
-                el.setAttribute('data-text', line);
-                break;
-        }
-
+        applyEffect(el, motion, line, idx);
         previewStage.appendChild(el);
     });
 
-    // Scroll to preview
-    motionPreview.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    previewStage.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// ========== EXISTING FUNCTIONALITY ==========
+function applyEffect(el, motion, line, idx) {
+    const delay = idx * 0.2;
 
-// Split text into individual characters for per-char animations
-function splitTextToChars(element, className) {
-    const text = element.textContent;
-    element.textContent = '';
-    text.split('').forEach((char, i) => {
+    switch (motion) {
+        case 'fade-in':
+            el.style.opacity = '0';
+            el.style.animation = `fadeIn 1.2s ease ${delay}s forwards`;
+            break;
+        case 'fade-in-up':
+            el.style.opacity = '0';
+            el.style.animation = `fadeInUp 1.2s ease ${delay}s forwards`;
+            break;
+        case 'fade-in-scale':
+            el.style.opacity = '0';
+            el.style.animation = `fadeInScale 1.2s ease ${delay}s forwards`;
+            break;
+        case 'slide-left':
+            el.style.opacity = '0';
+            el.style.animation = `slideLeft 0.8s ease ${delay}s forwards`;
+            break;
+        case 'slide-right':
+            el.style.opacity = '0';
+            el.style.animation = `slideRight 0.8s ease ${delay}s forwards`;
+            break;
+        case 'blur-reveal':
+            el.style.opacity = '0';
+            el.style.animation = `blurReveal 1.5s ease ${delay}s forwards`;
+            break;
+        case 'drop-in':
+            el.style.opacity = '0';
+            el.style.animation = `dropIn 0.7s ease ${delay}s forwards`;
+            break;
+        case 'typing-effect':
+            el.style.overflow = 'hidden';
+            el.style.whiteSpace = 'nowrap';
+            el.style.borderRight = '2px solid #00d4ff';
+            el.style.width = '0';
+            el.style.animation = `typing 2.5s steps(${line.length}) ${idx * 2.5}s forwards, blink 0.7s step-end infinite`;
+            el.style.animationName = 'typing, blink';
+            break;
+        case 'bounce-effect':
+            splitChars(el, line, 'bounce-char', idx, 0.05);
+            break;
+        case 'wave-effect':
+            splitChars(el, line, 'wave-char', 0, 0.08);
+            break;
+        case 'rubber-band':
+            splitChars(el, line, 'rubber-char', idx, 0.06);
+            break;
+        case 'flip-effect':
+            el.style.perspective = '800px';
+            splitChars(el, line, 'flip-char', idx, 0.06);
+            break;
+        case 'jelly-effect':
+            splitChars(el, line, 'jelly-char', idx, 0.05);
+            break;
+        case 'scatter-effect':
+            el.textContent = '';
+            line.split('').forEach((char, i) => {
+                const span = document.createElement('span');
+                span.textContent = char === ' ' ? '\u00A0' : char;
+                span.className = 'scatter-char';
+                span.style.setProperty('--sx', `${(Math.random()-0.5)*200}px`);
+                span.style.setProperty('--sy', `${(Math.random()-0.5)*200}px`);
+                span.style.setProperty('--sr', `${(Math.random()-0.5)*720}deg`);
+                span.style.animationDelay = `${(idx * line.length + i) * 0.04}s`;
+                el.appendChild(span);
+            });
+            break;
+        case 'spin-effect':
+            splitChars(el, line, 'spin-char', idx, 0.07);
+            break;
+        case 'pop-effect':
+            splitChars(el, line, 'pop-char', idx, 0.05);
+            break;
+        case 'swing-effect':
+            splitChars(el, line, 'swing-char', idx, 0.07);
+            break;
+        case 'float-up':
+            splitChars(el, line, 'float-char', idx, 0.06);
+            break;
+        case 'domino-effect':
+            splitChars(el, line, 'domino-char', idx, 0.06);
+            break;
+        case 'neon-effect':
+            el.style.animation = `neonFlicker 2s ease-in-out infinite alternate`;
+            el.style.animationDelay = `${delay}s`;
+            break;
+        case 'gradient-wave':
+            el.style.background = 'linear-gradient(90deg, #00d4ff, #ff006e, #667eea, #00d4ff)';
+            el.style.backgroundSize = '300% 100%';
+            el.style.webkitBackgroundClip = 'text';
+            el.style.backgroundClip = 'text';
+            el.style.color = 'transparent';
+            el.style.animation = `gradientShift 3s ease infinite`;
+            break;
+        case 'shadow-dance':
+            el.style.animation = `shadowDance 2s ease-in-out infinite`;
+            el.style.animationDelay = `${delay}s`;
+            break;
+        case 'pulse-effect':
+            el.style.animation = `pulse 1.5s ease-in-out infinite`;
+            el.style.animationDelay = `${delay}s`;
+            break;
+        case 'flicker-effect':
+            el.style.animation = `flicker 1.5s linear infinite`;
+            el.style.animationDelay = `${delay}s`;
+            break;
+        case 'rainbow-effect':
+            el.style.animation = `rainbow 3s linear infinite`;
+            el.style.animationDelay = `${delay}s`;
+            break;
+        case 'glitch-effect':
+            el.style.position = 'relative';
+            el.style.animation = `glitchText 2s infinite`;
+            el.setAttribute('data-text', line);
+            const before = document.createElement('span');
+            before.textContent = line;
+            before.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;color:#ff006e;animation:glitchBefore 2s infinite;clip-path:inset(0 0 60% 0);`;
+            const after = document.createElement('span');
+            after.textContent = line;
+            after.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;color:#00d4ff;animation:glitchAfter 2s infinite;clip-path:inset(60% 0 0 0);`;
+            el.appendChild(before);
+            el.appendChild(after);
+            break;
+        case 'shake-effect':
+            el.style.animation = `shakeIt 0.6s ease both`;
+            el.style.animationDelay = `${delay}s`;
+            break;
+        case 'explode-effect':
+            el.textContent = '';
+            line.split('').forEach((char, i) => {
+                const span = document.createElement('span');
+                span.textContent = char === ' ' ? '\u00A0' : char;
+                span.className = 'explode-char';
+                span.style.setProperty('--ex', `${(Math.random()-0.5)*300}px`);
+                span.style.setProperty('--ey', `${(Math.random()-0.5)*300}px`);
+                span.style.setProperty('--er', `${(Math.random()-0.5)*720}deg`);
+                span.style.animationDelay = `${(idx * line.length + i) * 0.03}s`;
+                el.appendChild(span);
+            });
+            break;
+        case 'zoom-effect':
+            el.style.opacity = '0';
+            el.style.animation = `zoomIn 0.8s ease ${delay}s forwards`;
+            break;
+    }
+}
+
+function splitChars(el, line, className, lineIdx, stagger) {
+    el.textContent = '';
+    line.split('').forEach((char, i) => {
         const span = document.createElement('span');
         span.textContent = char === ' ' ? '\u00A0' : char;
         span.className = className;
-        span.style.animationDelay = `${i * 0.08}s`;
-        element.appendChild(span);
+        span.style.animationDelay = `${(lineIdx * line.length + i) * stagger}s`;
+        el.appendChild(span);
     });
 }
 
-// Initialize character-split animations
-function initSplitAnimations() {
-    document.querySelectorAll('.bounce-text[data-split]').forEach(el => {
-        if (!el.querySelector('.bounce-char')) {
-            splitTextToChars(el, 'bounce-char');
-        }
-    });
-
-    document.querySelectorAll('.wave-text[data-split]').forEach(el => {
-        if (!el.querySelector('.wave-char')) {
-            splitTextToChars(el, 'wave-char');
-        }
-    });
-}
-
-// Replay animation for a section
-function replayAnimation(sectionId) {
-    const section = document.getElementById(sectionId);
-    if (!section) return;
-
-    const demoArea = section.querySelector('.demo-area');
-    if (!demoArea) return;
-
-    // Clone and replace to restart animations
-    const elements = demoArea.querySelectorAll('.motion-text');
-    elements.forEach(el => {
-        // For split-text animations, rebuild chars
-        if (el.hasAttribute('data-split')) {
-            const originalText = el.getAttribute('data-original') || el.textContent;
-            el.setAttribute('data-original', originalText);
-            el.textContent = originalText;
-
-            if (el.classList.contains('bounce-text')) {
-                splitTextToChars(el, 'bounce-char');
-            } else if (el.classList.contains('wave-text')) {
-                splitTextToChars(el, 'wave-char');
-            }
-        } else {
-            // Restart CSS animation by cloning
-            const clone = el.cloneNode(true);
-            el.parentNode.replaceChild(clone, el);
-        }
-    });
-}
-
-// Smooth scrolling for navigation links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
-
-// Replay buttons
-document.querySelectorAll('.replay-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const target = btn.getAttribute('data-target');
-        replayAnimation(target);
-    });
-});
-
-// Initialize on load
-document.addEventListener('DOMContentLoaded', () => {
-    // Store original text for split elements
-    document.querySelectorAll('[data-split]').forEach(el => {
-        el.setAttribute('data-original', el.textContent);
-    });
-
-    initSplitAnimations();
-});
-
-// Intersection Observer for scroll-triggered animations
-const observerOptions = {
-    threshold: 0.3,
-    rootMargin: '0px 0px -50px 0px'
-};
-
-const sectionObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-        }
-    });
-}, observerOptions);
-
-document.querySelectorAll('.motion-section').forEach(section => {
-    sectionObserver.observe(section);
-});
+// === TYPING KEYFRAMES (dynamic width) ===
+const style = document.createElement('style');
+style.textContent = `@keyframes typing { from { width: 0; } to { width: 100%; } }`;
+document.head.appendChild(style);

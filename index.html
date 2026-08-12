@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>텍스트 모션 테스트 - 배민 폰트</title>
+    <title>Text Motion Lab</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
@@ -11,220 +11,117 @@
     <header>
         <nav>
             <div class="logo">Text Motion Lab</div>
-            <ul class="nav-links">
-                <li><a href="#ocr">OCR</a></li>
-                <li><a href="#fade">Fade</a></li>
-                <li><a href="#slide">Slide</a></li>
-                <li><a href="#typing">Typing</a></li>
-                <li><a href="#bounce">Bounce</a></li>
-                <li><a href="#wave">Wave</a></li>
-                <li><a href="#glitch">Glitch</a></li>
-            </ul>
         </nav>
     </header>
 
     <main>
-        <!-- Hero -->
-        <section class="hero">
-            <h1 class="hero-title">텍스트 모션 테스트</h1>
-            <p class="hero-subtitle">이미지 속 텍스트를 추출해서 모션을 입혀보세요</p>
+        <!-- Tab Selector -->
+        <div class="tab-container">
+            <button class="tab active" data-tab="text">텍스트 입력</button>
+            <button class="tab" data-tab="image">이미지에서 추출</button>
+        </div>
+
+        <!-- Tab 1: Text Input -->
+        <section class="panel active" id="panel-text">
+            <textarea id="textInput" placeholder="여기에 텍스트를 입력하세요...">배달의민족 텍스트 모션</textarea>
         </section>
 
-        <!-- OCR Upload -->
-        <section id="ocr" class="motion-section ocr-section">
-            <h2 class="section-title">이미지에서 텍스트 추출</h2>
-            <div class="ocr-container">
-                <!-- Upload Area -->
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">📷</div>
-                    <p class="upload-text">이미지를 드래그하거나 클릭해서 업로드</p>
-                    <p class="upload-hint">텍스트가 포함된 이미지를 넣어주세요</p>
-                    <input type="file" id="imageInput" accept="image/*" hidden>
-                </div>
-
-                <!-- Image Preview -->
-                <div class="image-preview" id="imagePreview" style="display:none;">
-                    <img id="previewImg" alt="업로드 이미지">
-                    <button class="remove-img-btn" id="removeImg">✕</button>
-                </div>
-
-                <!-- OCR Progress -->
-                <div class="ocr-progress" id="ocrProgress" style="display:none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <p class="progress-text" id="progressText">텍스트 인식 중...</p>
-                </div>
-
-                <!-- Result Area -->
-                <div class="ocr-result" id="ocrResult" style="display:none;">
-                    <h3 class="result-title">추출된 텍스트 <span class="edit-hint">(직접 수정 가능)</span></h3>
-                    <div class="extracted-text" id="extractedText" contenteditable="true"></div>
-
-                    <!-- Controls -->
-                    <div class="motion-controls">
-                        <div class="control-group">
-                            <label>폰트 선택</label>
-                            <select id="fontSelect">
-                                <option value="font-dohyun">도현체</option>
-                                <option value="font-jua">주아체</option>
-                                <option value="font-hanna">한나체</option>
-                                <option value="font-euljiro">을지로체</option>
-                                <option value="font-yeonsung">연성체</option>
-                                <option value="font-kiranghaerang">기랑해랑체</option>
-                            </select>
-                        </div>
-                        <div class="control-group">
-                            <label>모션 선택</label>
-                            <select id="motionSelect">
-                                <optgroup label="기본">
-                                    <option value="fade-in">Fade In</option>
-                                    <option value="fade-in-up">Fade In Up</option>
-                                    <option value="fade-in-scale">Fade In Scale</option>
-                                    <option value="slide-left">Slide Left</option>
-                                    <option value="slide-right">Slide Right</option>
-                                </optgroup>
-                                <optgroup label="타이핑">
-                                    <option value="typing-effect">Typing</option>
-                                </optgroup>
-                                <optgroup label="글자별 모션">
-                                    <option value="bounce-effect">Bounce 통통</option>
-                                    <option value="wave-effect">Wave 물결</option>
-                                    <option value="rubber-band">Rubber Band 고무줄</option>
-                                    <option value="flip-effect">3D Flip 뒤집기</option>
-                                    <option value="jelly-effect">Jelly 젤리</option>
-                                    <option value="scatter-effect">Scatter 흩뿌리기</option>
-                                    <option value="spin-effect">Spin 회전</option>
-                                </optgroup>
-                                <optgroup label="연출 효과">
-                                    <option value="glitch-effect">Glitch 글리치</option>
-                                    <option value="neon-effect">Neon 네온</option>
-                                    <option value="blur-reveal">Blur Reveal 블러</option>
-                                    <option value="gradient-wave">Gradient Wave 그라디언트</option>
-                                    <option value="shadow-dance">Shadow Dance 그림자춤</option>
-                                    <option value="shake-effect">Shake 흔들기</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        <div class="control-group">
-                            <label>글자 크기</label>
-                            <input type="range" id="fontSizeRange" min="1" max="5" step="0.5" value="2.5">
-                            <span id="fontSizeValue">2.5rem</span>
-                        </div>
-                    </div>
-
-                    <button class="apply-btn" id="applyMotion">모션 적용</button>
-                </div>
-
-                <!-- Motion Preview -->
-                <div class="motion-preview" id="motionPreview" style="display:none;">
-                    <h3 class="result-title">모션 미리보기</h3>
-                    <div class="preview-stage" id="previewStage"></div>
-                    <button class="replay-btn" id="replayOcr">다시 재생</button>
-                </div>
+        <!-- Tab 2: Image OCR -->
+        <section class="panel" id="panel-image">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📷</div>
+                <p class="upload-text">이미지를 드래그하거나 클릭해서 업로드</p>
+                <p class="upload-hint">텍스트가 포함된 이미지를 넣어주세요</p>
+                <input type="file" id="imageInput" accept="image/*" hidden>
+            </div>
+            <div class="image-preview" id="imagePreview" style="display:none;">
+                <img id="previewImg" alt="업로드 이미지">
+                <button class="remove-img-btn" id="removeImg">✕</button>
+            </div>
+            <div class="ocr-progress" id="ocrProgress" style="display:none;">
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                <p class="progress-text" id="progressText">텍스트 인식 중...</p>
+            </div>
+            <div class="ocr-result" id="ocrResult" style="display:none;">
+                <label class="field-label">추출된 텍스트 <span class="edit-hint">(수정 가능)</span></label>
+                <textarea id="ocrText"></textarea>
             </div>
         </section>
 
-        <!-- Fade In/Out -->
-        <section id="fade" class="motion-section">
-            <h2 class="section-title">Fade In / Out</h2>
-            <div class="motion-demo">
-                <div class="demo-area">
-                    <p class="motion-text fade-in font-dohyun">배달의민족 도현체</p>
-                    <p class="motion-text fade-in-up font-jua">배달의민족 주아체</p>
-                    <p class="motion-text fade-in-scale font-hanna">배달의민족 한나체</p>
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <label>폰트</label>
+                    <select id="fontSelect">
+                        <option value="font-dohyun">도현체</option>
+                        <option value="font-jua">주아체</option>
+                        <option value="font-hanna">한나체</option>
+                        <option value="font-euljiro">을지로체</option>
+                        <option value="font-yeonsung">연성체</option>
+                        <option value="font-kiranghaerang">기랑해랑체</option>
+                    </select>
                 </div>
-                <button class="replay-btn" data-target="fade">다시 재생</button>
+                <div class="control-group">
+                    <label>모션</label>
+                    <select id="motionSelect">
+                        <optgroup label="등장">
+                            <option value="fade-in">Fade In</option>
+                            <option value="fade-in-up">Fade In Up</option>
+                            <option value="fade-in-scale">Fade In Scale</option>
+                            <option value="slide-left">Slide Left</option>
+                            <option value="slide-right">Slide Right</option>
+                            <option value="blur-reveal">Blur Reveal</option>
+                            <option value="drop-in">Drop In</option>
+                        </optgroup>
+                        <optgroup label="타이핑">
+                            <option value="typing-effect">Typing</option>
+                        </optgroup>
+                        <optgroup label="글자별 모션">
+                            <option value="bounce-effect">Bounce 통통</option>
+                            <option value="wave-effect">Wave 물결</option>
+                            <option value="rubber-band">Rubber Band 고무줄</option>
+                            <option value="flip-effect">3D Flip 뒤집기</option>
+                            <option value="jelly-effect">Jelly 젤리</option>
+                            <option value="scatter-effect">Scatter 흩뿌리기</option>
+                            <option value="spin-effect">Spin 회전</option>
+                            <option value="pop-effect">Pop 팝</option>
+                            <option value="swing-effect">Swing 흔들</option>
+                            <option value="float-up">Float Up 떠오르기</option>
+                            <option value="domino-effect">Domino 도미노</option>
+                        </optgroup>
+                        <optgroup label="루프 연출">
+                            <option value="neon-effect">Neon 네온</option>
+                            <option value="gradient-wave">Gradient 그라디언트</option>
+                            <option value="shadow-dance">Shadow Dance 그림자춤</option>
+                            <option value="pulse-effect">Pulse 맥박</option>
+                            <option value="flicker-effect">Flicker 깜빡</option>
+                            <option value="rainbow-effect">Rainbow 무지개</option>
+                        </optgroup>
+                        <optgroup label="액션">
+                            <option value="glitch-effect">Glitch 글리치</option>
+                            <option value="shake-effect">Shake 흔들기</option>
+                            <option value="explode-effect">Explode 폭발</option>
+                            <option value="zoom-effect">Zoom 줌</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>크기</label>
+                    <input type="range" id="fontSizeRange" min="1.5" max="6" step="0.5" value="3">
+                    <span id="fontSizeValue">3rem</span>
+                </div>
             </div>
-        </section>
+            <button class="apply-btn" id="applyMotion">모션 적용</button>
+        </div>
 
-        <!-- Slide -->
-        <section id="slide" class="motion-section">
-            <h2 class="section-title">Slide</h2>
-            <div class="motion-demo">
-                <div class="demo-area">
-                    <p class="motion-text slide-left font-dohyun">왼쪽에서 슬라이드</p>
-                    <p class="motion-text slide-right font-jua">오른쪽에서 슬라이드</p>
-                    <p class="motion-text slide-bottom font-hanna">아래에서 슬라이드</p>
-                </div>
-                <button class="replay-btn" data-target="slide">다시 재생</button>
+        <!-- Preview Stage -->
+        <div class="stage-container">
+            <div class="preview-stage" id="previewStage">
+                <p class="stage-placeholder">위에서 텍스트를 입력하고 모션을 적용해보세요</p>
             </div>
-        </section>
-
-        <!-- Typing -->
-        <section id="typing" class="motion-section">
-            <h2 class="section-title">Typing Effect</h2>
-            <div class="motion-demo">
-                <div class="demo-area">
-                    <p class="motion-text typing font-dohyun">맛있는 음식을 배달합니다</p>
-                </div>
-                <button class="replay-btn" data-target="typing">다시 재생</button>
-            </div>
-        </section>
-
-        <!-- Bounce -->
-        <section id="bounce" class="motion-section">
-            <h2 class="section-title">Bounce</h2>
-            <div class="motion-demo">
-                <div class="demo-area">
-                    <p class="motion-text bounce-text font-jua" data-split>통통 튀는 글자들</p>
-                </div>
-                <button class="replay-btn" data-target="bounce">다시 재생</button>
-            </div>
-        </section>
-
-        <!-- Wave -->
-        <section id="wave" class="motion-section">
-            <h2 class="section-title">Wave</h2>
-            <div class="motion-demo">
-                <div class="demo-area">
-                    <p class="motion-text wave-text font-hanna" data-split>물결치는 텍스트 모션</p>
-                </div>
-                <button class="replay-btn" data-target="wave">다시 재생</button>
-            </div>
-        </section>
-
-        <!-- Glitch -->
-        <section id="glitch" class="motion-section">
-            <h2 class="section-title">Glitch</h2>
-            <div class="motion-demo">
-                <div class="demo-area">
-                    <p class="motion-text glitch font-dohyun" data-text="글리치 이펙트">글리치 이펙트</p>
-                </div>
-                <button class="replay-btn" data-target="glitch">다시 재생</button>
-            </div>
-        </section>
-
-        <!-- Font Showcase -->
-        <section id="fonts" class="motion-section font-showcase">
-            <h2 class="section-title">폰트 미리보기</h2>
-            <div class="font-cards">
-                <div class="font-card">
-                    <span class="font-label">도현체</span>
-                    <p class="font-dohyun font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
-                </div>
-                <div class="font-card">
-                    <span class="font-label">주아체</span>
-                    <p class="font-jua font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
-                </div>
-                <div class="font-card">
-                    <span class="font-label">한나체</span>
-                    <p class="font-hanna font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
-                </div>
-                <div class="font-card">
-                    <span class="font-label">을지로체</span>
-                    <p class="font-euljiro font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
-                </div>
-                <div class="font-card">
-                    <span class="font-label">연성체</span>
-                    <p class="font-yeonsung font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
-                </div>
-                <div class="font-card">
-                    <span class="font-label">기랑해랑체</span>
-                    <p class="font-kiranghaerang font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
-                </div>
-            </div>
-        </section>
+            <button class="replay-btn" id="replayBtn" style="display:none;">다시 재생</button>
+        </div>
     </main>
 
     <footer>
