@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Text Motion Lab</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=7">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
@@ -19,6 +19,7 @@
         <div class="tab-container">
             <button class="tab active" data-tab="text">텍스트 입력</button>
             <button class="tab" data-tab="image">이미지에서 추출</button>
+            <button class="tab" data-tab="masking">마스킹</button>
         </div>
 
         <!-- Tab 1: Text Input -->
@@ -87,8 +88,68 @@
             <div class="preview-stage" id="previewStage">
                 <p class="stage-placeholder">모션을 선택하면 여기에서 미리볼 수 있어요</p>
             </div>
-            <button class="replay-btn" id="replayBtn" style="display:none;">다시 재생</button>
-            <button class="export-btn" id="exportBtn" style="display:none;">영상 내보내기 (WebM)</button>
+            <div class="stage-actions">
+                <button class="replay-btn" id="replayBtn" style="display:none;">다시 재생</button>
+                <button class="export-btn" id="exportBtn" style="display:none;">MP4 내보내기 (그린스크린)</button>
+            </div>
+        </div>
+
+        <!-- Masking Panel -->
+        <div class="masking-section" id="maskingSection" style="display:none;">
+            <div class="detail-header">
+                <span class="detail-title">마스킹 애니메이션</span>
+                <button class="detail-close" id="maskingClose">✕</button>
+            </div>
+            <p class="masking-desc">텍스트의 일부를 선택해서 지워졌다 나타나는 효과를 줍니다</p>
+            <div class="masking-input-wrap">
+                <label class="field-label">텍스트 (드래그로 마스킹 영역 선택)</label>
+                <div class="masking-text" id="maskingText" contenteditable="false"></div>
+            </div>
+            <div class="masking-controls" id="maskingControls">
+                <div class="ctrl">
+                    <label>마스킹 시작 시간</label>
+                    <input type="range" id="maskStart" min="0" max="3" step="0.1" value="0">
+                    <div class="val" id="maskStartVal">0s</div>
+                </div>
+                <div class="ctrl">
+                    <label>사라짐 지속시간</label>
+                    <input type="range" id="maskHideDur" min="0.1" max="2" step="0.1" value="0.5">
+                    <div class="val" id="maskHideDurVal">0.5s</div>
+                </div>
+                <div class="ctrl">
+                    <label>숨김 유지시간</label>
+                    <input type="range" id="maskHold" min="0" max="3" step="0.1" value="1">
+                    <div class="val" id="maskHoldVal">1s</div>
+                </div>
+                <div class="ctrl">
+                    <label>나타남 지속시간</label>
+                    <input type="range" id="maskShowDur" min="0.1" max="2" step="0.1" value="0.5">
+                    <div class="val" id="maskShowDurVal">0.5s</div>
+                </div>
+                <div class="ctrl">
+                    <label>효과 스타일</label>
+                    <select id="maskStyle">
+                        <option value="opacity">투명도</option>
+                        <option value="blur">블러</option>
+                        <option value="scale">축소</option>
+                        <option value="slide-up">위로 슬라이드</option>
+                        <option value="clip">클리핑</option>
+                        <option value="glitch">글리치</option>
+                    </select>
+                </div>
+                <div class="ctrl">
+                    <label>이징</label>
+                    <select id="maskEasing">
+                        <option value="ease">Ease</option>
+                        <option value="ease-in-out">Ease In-Out</option>
+                        <option value="ease-in">Ease In</option>
+                        <option value="ease-out">Ease Out</option>
+                        <option value="linear">Linear</option>
+                    </select>
+                </div>
+            </div>
+            <button class="apply-btn" id="applyMasking">마스킹 미리보기</button>
+            <div class="masking-preview" id="maskingPreview"></div>
         </div>
     </main>
 
@@ -96,6 +157,6 @@
         <p>&copy; 2026 Text Motion Lab. 배달의민족 폰트 by 우아한형제들</p>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=7"></script>
 </body>
 </html>

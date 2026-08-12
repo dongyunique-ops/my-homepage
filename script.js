@@ -186,7 +186,17 @@ document.querySelectorAll('.tab').forEach(tab => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+        const panelId = `panel-${tab.dataset.tab}`;
+        const panel = document.getElementById(panelId);
+        if (panel) panel.classList.add('active');
+        // Show/hide masking section
+        document.getElementById('maskingSection').style.display = tab.dataset.tab === 'masking' ? 'block' : 'none';
+        if (tab.dataset.tab === 'masking') {
+            const text = getCurrentTextRaw() || '배달의민족 텍스트 모션';
+            const maskText = document.getElementById('maskingText');
+            maskText.textContent = text;
+            enableMaskSelection(maskText);
+        }
     });
 });
 
@@ -419,7 +429,12 @@ document.getElementById('replayBtn').addEventListener('click', liveUpdate);
 
 function getCurrentText() {
     const tab = document.querySelector('.tab.active').dataset.tab;
-    return tab==='image' ? ocrText.value.trim() : document.getElementById('textInput').value.trim();
+    if (tab === 'image') return document.getElementById('ocrText').value.trim();
+    return document.getElementById('textInput').value.trim();
+}
+
+function getCurrentTextRaw() {
+    return document.getElementById('textInput').value.trim() || document.getElementById('ocrText').value.trim();
 }
 
 function applyMotionToText() {
@@ -515,7 +530,7 @@ const sty=document.createElement('style');
 sty.textContent=`@keyframes typing{from{width:0}to{width:100%}}`;
 document.head.appendChild(sty);
 
-// === EXPORT AS TRANSPARENT VIDEO (WebM) ===
+// === EXPORT AS MP4 (GREEN SCREEN) ===
 document.getElementById('exportBtn').addEventListener('click', exportVideo);
 
 async function exportVideo() {
@@ -526,110 +541,183 @@ async function exportVideo() {
     btn.textContent = '녹화 중...';
     btn.disabled = true;
 
-    // Create offscreen canvas
     const rect = stage.getBoundingClientRect();
-    const scale = 2; // retina
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
     const canvas = document.createElement('canvas');
-    canvas.width = rect.width * scale;
-    canvas.height = rect.height * scale;
+    canvas.width = w * 2;
+    canvas.height = h * 2;
     const ctx = canvas.getContext('2d');
 
-    // Use html2canvas-like approach: capture via MediaRecorder on a canvas stream
-    // We'll use the experimental captureStream on a cloned element rendered to canvas
-    // Simpler approach: use DOM + requestAnimationFrame + canvas drawImage from foreignObject
-
-    // Best approach for transparent video: record the stage element
     const duration = estimateDuration();
+    const fps = 30;
+    const totalFrames = Math.ceil(duration * fps);
 
     // Re-trigger animation
     liveUpdate();
 
-    // Use a hidden div for recording with transparent bg
-    const recordDiv = document.createElement('div');
-    recordDiv.style.cssText = `position:fixed;top:-9999px;left:0;width:${rect.width}px;height:${rect.height}px;background:transparent;overflow:hidden;`;
-    recordDiv.innerHTML = stage.innerHTML;
-    document.body.appendChild(recordDiv);
-
-    // Record using MediaRecorder with canvas
-    const recCanvas = document.createElement('canvas');
-    recCanvas.width = Math.round(rect.width * scale);
-    recCanvas.height = Math.round(rect.height * scale);
-    const recCtx = recCanvas.getContext('2d');
-
-    const stream = recCanvas.captureStream(60);
+    const stream = canvas.captureStream(fps);
     const chunks = [];
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 5000000 });
+
+    // Try MP4 first, fallback to WebM
+    let mimeType = 'video/webm;codecs=vp9';
+    if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
+        mimeType = 'video/mp4;codecs=avc1';
+    } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+        mimeType = 'video/webm;codecs=h264';
+    }
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+
+    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
     recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
+        const blob = new Blob(chunks, { type: mimeType.split(';')[0] });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'text-motion.webm';
+        a.download = `text-motion.${ext}`;
         a.click();
         URL.revokeObjectURL(url);
-        btn.textContent = '영상 내보내기 (WebM)';
+        btn.textContent = 'MP4 내보내기 (그린스크린)';
         btn.disabled = false;
-        document.body.removeChild(recordDiv);
     };
 
     recorder.start();
 
-    // Render frames using html-to-image approach (foreignObject SVG)
-    const totalFrames = Math.ceil(duration * 60);
     let frame = 0;
-
-    function drawFrame() {
+    function renderFrame() {
         if (frame >= totalFrames) {
             recorder.stop();
             return;
         }
+        // Green screen background
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw stage content to canvas using foreignObject
-        const svgData = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="${recCanvas.width}" height="${recCanvas.height}">
-                <foreignObject width="100%" height="100%">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="width:${rect.width}px;height:${rect.height}px;transform:scale(${scale});transform-origin:top left;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.8rem;">
-                        ${stage.innerHTML}
-                    </div>
-                </foreignObject>
-            </svg>`;
+        // Draw stage content
+        const stageClone = stage.cloneNode(true);
+        const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}">
+            <foreignObject width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml" style="width:${w}px;height:${h}px;transform:scale(2);transform-origin:top left;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.8rem;padding:2rem;">
+                    ${stage.innerHTML}
+                </div>
+            </foreignObject>
+        </svg>`;
 
         const img = new Image();
-        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-        const svgUrl = URL.createObjectURL(svgBlob);
-
+        const blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
         img.onload = () => {
-            recCtx.clearRect(0, 0, recCanvas.width, recCanvas.height);
-            recCtx.drawImage(img, 0, 0);
-            URL.revokeObjectURL(svgUrl);
+            ctx.drawImage(img, 0, 0);
+            URL.revokeObjectURL(url);
             frame++;
-            requestAnimationFrame(drawFrame);
+            requestAnimationFrame(renderFrame);
         };
         img.onerror = () => {
-            // Fallback: just clear
-            recCtx.clearRect(0, 0, recCanvas.width, recCanvas.height);
             frame++;
-            requestAnimationFrame(drawFrame);
+            requestAnimationFrame(renderFrame);
         };
-        img.src = svgUrl;
+        img.src = url;
     }
-
-    drawFrame();
+    renderFrame();
 }
 
 function estimateDuration() {
-    // Estimate based on motion params
     if (!selectedMotion) return 3;
     const p = motionParams;
     const text = getCurrentText();
     const lines = text ? text.split('\n').filter(l=>l.trim()) : ['test'];
     const lineCount = lines.length;
-    const maxLineLen = Math.max(...lines.map(l=>l.length));
-
-    let dur = 3; // default
+    const maxLen = Math.max(...lines.map(l=>l.length));
+    let dur = 3;
     if (p.duration) dur = p.duration + lineCount * (p.lineDelay || 0.2);
     if (p.speed) dur = p.speed * lineCount;
-    if (p.stagger) dur = p.stagger * maxLineLen * lineCount + 1;
-    return Math.min(Math.max(dur + 0.5, 2), 10); // clamp 2-10s
+    if (p.stagger) dur = p.stagger * maxLen * lineCount + 1;
+    return Math.min(Math.max(dur + 0.5, 2), 10);
 }
+
+// === MASKING FEATURE ===
+const maskingSection = document.getElementById('maskingSection');
+let maskSelection = { start: 0, end: 0 };
+
+document.getElementById('maskingClose').addEventListener('click', () => {
+    maskingSection.style.display = 'none';
+});
+
+function enableMaskSelection(el) {
+    el.addEventListener('mouseup', () => {
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0 && sel.toString().length > 0) {
+            const range = sel.getRangeAt(0);
+            // Highlight selection
+            const text = el.textContent;
+            const selText = sel.toString();
+            const startIdx = text.indexOf(selText);
+            if (startIdx >= 0) {
+                maskSelection = { start: startIdx, end: startIdx + selText.length };
+                el.innerHTML = text.substring(0, startIdx) +
+                    `<span class="masked">${selText}</span>` +
+                    text.substring(startIdx + selText.length);
+            }
+        }
+    });
+}
+
+// Masking param controls
+['maskStart','maskHideDur','maskHold','maskShowDur'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+        document.getElementById(id+'Val').textContent = el.value + 's';
+    });
+});
+
+document.getElementById('applyMasking').addEventListener('click', () => {
+    const text = document.getElementById('maskingText').textContent;
+    if (!text || maskSelection.start === maskSelection.end) return;
+
+    const preview = document.getElementById('maskingPreview');
+    const font = document.getElementById('fontSelect').value;
+    const maskStart = parseFloat(document.getElementById('maskStart').value);
+    const hideDur = parseFloat(document.getElementById('maskHideDur').value);
+    const hold = parseFloat(document.getElementById('maskHold').value);
+    const showDur = parseFloat(document.getElementById('maskShowDur').value);
+    const style = document.getElementById('maskStyle').value;
+    const easing = document.getElementById('maskEasing').value;
+
+    const before = text.substring(0, maskSelection.start);
+    const masked = text.substring(maskSelection.start, maskSelection.end);
+    const after = text.substring(maskSelection.end);
+
+    const totalDur = maskStart + hideDur + hold + showDur;
+
+    // Build CSS animation
+    const hideEnd = ((maskStart + hideDur) / totalDur * 100).toFixed(1);
+    const holdEnd = ((maskStart + hideDur + hold) / totalDur * 100).toFixed(1);
+    const showEnd = 100;
+    const startPct = ((maskStart) / totalDur * 100).toFixed(1);
+
+    let hideStyle = '', showStyle = '', hiddenStyle = '';
+    switch(style) {
+        case 'opacity': hideStyle='opacity:0'; showStyle='opacity:1'; hiddenStyle='opacity:0'; break;
+        case 'blur': hideStyle='opacity:0;filter:blur(10px)'; showStyle='opacity:1;filter:blur(0)'; hiddenStyle='opacity:0;filter:blur(10px)'; break;
+        case 'scale': hideStyle='transform:scale(0);opacity:0'; showStyle='transform:scale(1);opacity:1'; hiddenStyle='transform:scale(0);opacity:0'; break;
+        case 'slide-up': hideStyle='transform:translateY(-20px);opacity:0'; showStyle='transform:translateY(0);opacity:1'; hiddenStyle='transform:translateY(-20px);opacity:0'; break;
+        case 'clip': hideStyle='clip-path:inset(0 100% 0 0)'; showStyle='clip-path:inset(0 0 0 0)'; hiddenStyle='clip-path:inset(0 100% 0 0)'; break;
+        case 'glitch': hideStyle='opacity:0;transform:translateX(5px)'; showStyle='opacity:1;transform:translateX(0)'; hiddenStyle='opacity:0;transform:translateX(-5px)'; break;
+    }
+
+    const animName = 'maskAnim' + Date.now();
+    const keyframes = `@keyframes ${animName} {
+        0%, ${startPct}% { ${showStyle} }
+        ${hideEnd}% { ${hiddenStyle} }
+        ${holdEnd}% { ${hiddenStyle} }
+        ${showEnd}% { ${showStyle} }
+    }`;
+
+    // Inject keyframes
+    const styleEl = document.createElement('style');
+    styleEl.textContent = keyframes;
+    document.head.appendChild(styleEl);
+
+    preview.innerHTML = `<span class="${font}">${before}<span style="display:inline-block;animation:${animName} ${totalDur}s ${easing} infinite">${masked}</span>${after}</span>`;
+});
