@@ -58,8 +58,8 @@
 
                 <!-- Result Area -->
                 <div class="ocr-result" id="ocrResult" style="display:none;">
-                    <h3 class="result-title">추출된 텍스트</h3>
-                    <div class="extracted-text" id="extractedText"></div>
+                    <h3 class="result-title">추출된 텍스트 <span class="edit-hint">(직접 수정 가능)</span></h3>
+                    <div class="extracted-text" id="extractedText" contenteditable="true"></div>
 
                     <!-- Controls -->
                     <div class="motion-controls">
@@ -69,6 +69,9 @@
                                 <option value="font-dohyun">도현체</option>
                                 <option value="font-jua">주아체</option>
                                 <option value="font-hanna">한나체</option>
+                                <option value="font-euljiro">을지로체</option>
+                                <option value="font-yeonsung">연성체</option>
+                                <option value="font-kiranghaerang">기랑해랑체</option>
                             </select>
                         </div>
                         <div class="control-group">
@@ -189,6 +192,18 @@
                 <div class="font-card">
                     <span class="font-label">한나체</span>
                     <p class="font-hanna font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
+                </div>
+                <div class="font-card">
+                    <span class="font-label">을지로체</span>
+                    <p class="font-euljiro font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
+                </div>
+                <div class="font-card">
+                    <span class="font-label">연성체</span>
+                    <p class="font-yeonsung font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
+                </div>
+                <div class="font-card">
+                    <span class="font-label">기랑해랑체</span>
+                    <p class="font-kiranghaerang font-sample">다람쥐 헌 쳇바퀴에 타고파 1234567890</p>
                 </div>
             </div>
         </section>

@@ -137,7 +137,10 @@ async function performOCR(imageData) {
 }
 
 function applyMotionToText() {
-    if (!currentExtractedText) return;
+    // Read from editable div (user may have modified the text)
+    const editedText = extractedText.innerText.trim();
+    if (!editedText) return;
+    currentExtractedText = editedText;
 
     const font = fontSelect.value;
     const motion = motionSelect.value;

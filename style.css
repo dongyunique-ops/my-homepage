@@ -20,10 +20,34 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: 'BMEuljiro';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/BMEULJIRO.woff') format('woff');
+    font-weight: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'BMYeonSung';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/BMYEONSUNG.woff') format('woff');
+    font-weight: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'BMKirangHaerang';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/BMKIRANGHAERANG.woff') format('woff');
+    font-weight: normal;
+    font-display: swap;
+}
+
 /* Font classes */
 .font-dohyun { font-family: 'Dohyun', sans-serif; }
 .font-jua { font-family: 'BMJUA', sans-serif; }
 .font-hanna { font-family: 'BMHANNAPro', sans-serif; }
+.font-euljiro { font-family: 'BMEuljiro', sans-serif; }
+.font-yeonsung { font-family: 'BMYeonSung', sans-serif; }
+.font-kiranghaerang { font-family: 'BMKirangHaerang', sans-serif; }
 
 /* Reset & Base */
 * {
@@ -565,6 +589,20 @@ footer {
     word-break: break-word;
     max-height: 200px;
     overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.extracted-text:focus {
+    border-color: #00d4ff;
+}
+
+.edit-hint {
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: normal;
+    font-family: -apple-system, sans-serif;
 }
 
 /* Motion Controls */
