@@ -208,6 +208,79 @@ function applyMotionToText() {
                     el.appendChild(span);
                 });
                 break;
+            case 'rubber-band':
+                el.textContent = '';
+                line.split('').forEach((char, i) => {
+                    const span = document.createElement('span');
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.className = 'rubber-char';
+                    span.style.animationDelay = `${(index * line.length + i) * 0.06}s`;
+                    el.appendChild(span);
+                });
+                break;
+            case 'flip-effect':
+                el.textContent = '';
+                el.style.perspective = '800px';
+                line.split('').forEach((char, i) => {
+                    const span = document.createElement('span');
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.className = 'flip-char';
+                    span.style.animationDelay = `${(index * line.length + i) * 0.06}s`;
+                    el.appendChild(span);
+                });
+                break;
+            case 'jelly-effect':
+                el.textContent = '';
+                line.split('').forEach((char, i) => {
+                    const span = document.createElement('span');
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.className = 'jelly-char';
+                    span.style.animationDelay = `${(index * line.length + i) * 0.05}s`;
+                    el.appendChild(span);
+                });
+                break;
+            case 'scatter-effect':
+                el.textContent = '';
+                line.split('').forEach((char, i) => {
+                    const span = document.createElement('span');
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.className = 'scatter-char';
+                    span.style.setProperty('--scatter-x', `${(Math.random() - 0.5) * 200}px`);
+                    span.style.setProperty('--scatter-y', `${(Math.random() - 0.5) * 200}px`);
+                    span.style.setProperty('--scatter-r', `${(Math.random() - 0.5) * 720}deg`);
+                    span.style.animationDelay = `${(index * line.length + i) * 0.04}s`;
+                    el.appendChild(span);
+                });
+                break;
+            case 'spin-effect':
+                el.textContent = '';
+                line.split('').forEach((char, i) => {
+                    const span = document.createElement('span');
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.className = 'spin-char';
+                    span.style.animationDelay = `${(index * line.length + i) * 0.07}s`;
+                    el.appendChild(span);
+                });
+                break;
+            case 'neon-effect':
+                el.classList.add('neon-text');
+                break;
+            case 'blur-reveal':
+                el.style.opacity = '0';
+                el.classList.add('blur-reveal-text');
+                el.style.animationDelay = `${index * 0.3}s`;
+                break;
+            case 'gradient-wave':
+                el.classList.add('gradient-wave-text');
+                break;
+            case 'shadow-dance':
+                el.classList.add('shadow-dance-text');
+                el.style.animationDelay = `${index * 0.2}s`;
+                break;
+            case 'shake-effect':
+                el.classList.add('shake-text');
+                el.style.animationDelay = `${index * 0.15}s`;
+                break;
             case 'glitch-effect':
                 el.className += ' glitch';
                 el.setAttribute('data-text', line);
