@@ -105,6 +105,9 @@ main { max-width:960px; margin:0 auto; padding:2rem 1.5rem 4rem; display:flex; f
 .detail-controls .ctrl input[type="range"] { width:100%; -webkit-appearance:none; appearance:none; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; outline:none; }
 .detail-controls .ctrl input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:#00d4ff; cursor:pointer; }
 .detail-controls .ctrl .val { color:#666; font-size:0.65rem; text-align:right; }
+.detail-controls .ctrl select { width:100%; padding:0.4rem 0.5rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.12); border-radius:6px; color:#fff; font-size:0.8rem; outline:none; appearance:none; -webkit-appearance:none; cursor:pointer; }
+.detail-controls .ctrl select:focus { border-color:#00d4ff; }
+.detail-controls .ctrl input[type="color"] { width:100%; height:28px; border:1px solid rgba(255,255,255,0.12); border-radius:6px; background:rgba(0,0,0,0.4); cursor:pointer; padding:2px; }
 
 .apply-btn { width:100%; padding:0.8rem; background:linear-gradient(135deg,#00d4ff,#667eea); color:#fff; border:none; border-radius:10px; font-size:0.95rem; font-family:'BMJUA',sans-serif; cursor:pointer; transition:transform 0.2s,box-shadow 0.2s; }
 .apply-btn:hover { transform:translateY(-2px); box-shadow:0 5px 20px rgba(0,212,255,0.3); }

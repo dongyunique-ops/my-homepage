@@ -1,34 +1,179 @@
 // === MOTION DATA ===
 const MOTIONS = [
-    { id:'fade-in', name:'Fade In', tag:'등장', params:[{id:'duration',label:'지속시간',min:0.3,max:3,step:0.1,default:1.2,unit:'s'},{id:'delay',label:'딜레이',min:0,max:2,step:0.1,default:0,unit:'s'}] },
-    { id:'fade-in-up', name:'Fade Up', tag:'등장', params:[{id:'duration',label:'지속시간',min:0.3,max:3,step:0.1,default:1.2,unit:'s'},{id:'distance',label:'이동거리',min:10,max:80,step:5,default:30,unit:'px'}] },
-    { id:'fade-in-scale', name:'Fade Scale', tag:'등장', params:[{id:'duration',label:'지속시간',min:0.3,max:3,step:0.1,default:1.2,unit:'s'},{id:'startScale',label:'시작크기',min:0.1,max:0.9,step:0.1,default:0.7,unit:'x'}] },
-    { id:'slide-left', name:'Slide Left', tag:'등장', params:[{id:'duration',label:'지속시간',min:0.3,max:2,step:0.1,default:0.8,unit:'s'},{id:'distance',label:'이동거리',min:30,max:200,step:10,default:80,unit:'px'}] },
-    { id:'slide-right', name:'Slide Right', tag:'등장', params:[{id:'duration',label:'지속시간',min:0.3,max:2,step:0.1,default:0.8,unit:'s'},{id:'distance',label:'이동거리',min:30,max:200,step:10,default:80,unit:'px'}] },
-    { id:'blur-reveal', name:'Blur Reveal', tag:'등장', params:[{id:'duration',label:'지속시간',min:0.5,max:3,step:0.1,default:1.5,unit:'s'},{id:'blur',label:'블러량',min:5,max:40,step:5,default:20,unit:'px'}] },
-    { id:'drop-in', name:'Drop In', tag:'등장', params:[{id:'duration',label:'지속시간',min:0.3,max:2,step:0.1,default:0.7,unit:'s'},{id:'height',label:'낙하높이',min:20,max:120,step:10,default:60,unit:'px'}] },
-    { id:'zoom-effect', name:'Zoom', tag:'등장', params:[{id:'duration',label:'지속시간',min:0.3,max:2,step:0.1,default:0.8,unit:'s'},{id:'startScale',label:'시작크기',min:1.5,max:5,step:0.5,default:3,unit:'x'}] },
-    { id:'typing-effect', name:'Typing', tag:'타이핑', params:[{id:'speed',label:'속도',min:1,max:6,step:0.5,default:2.5,unit:'s'}] },
-    { id:'bounce-effect', name:'Bounce', tag:'글자별', params:[{id:'stagger',label:'글자간격',min:0.02,max:0.15,step:0.01,default:0.05,unit:'s'},{id:'height',label:'높이',min:20,max:80,step:5,default:50,unit:'px'}] },
-    { id:'wave-effect', name:'Wave', tag:'글자별', params:[{id:'speed',label:'속도',min:0.8,max:3,step:0.1,default:1.5,unit:'s'},{id:'height',label:'높이',min:5,max:25,step:1,default:12,unit:'px'}] },
-    { id:'rubber-band', name:'Rubber Band', tag:'글자별', params:[{id:'stagger',label:'글자간격',min:0.02,max:0.15,step:0.01,default:0.06,unit:'s'}] },
-    { id:'flip-effect', name:'3D Flip', tag:'글자별', params:[{id:'stagger',label:'글자간격',min:0.02,max:0.15,step:0.01,default:0.06,unit:'s'},{id:'duration',label:'지속시간',min:0.3,max:1.5,step:0.1,default:0.8,unit:'s'}] },
-    { id:'jelly-effect', name:'Jelly', tag:'글자별', params:[{id:'stagger',label:'글자간격',min:0.02,max:0.12,step:0.01,default:0.05,unit:'s'}] },
-    { id:'scatter-effect', name:'Scatter', tag:'글자별', params:[{id:'range',label:'흩어짐',min:50,max:300,step:25,default:200,unit:'px'},{id:'stagger',label:'글자간격',min:0.02,max:0.1,step:0.01,default:0.04,unit:'s'}] },
-    { id:'spin-effect', name:'Spin', tag:'글자별', params:[{id:'stagger',label:'글자간격',min:0.03,max:0.15,step:0.01,default:0.07,unit:'s'}] },
-    { id:'pop-effect', name:'Pop', tag:'글자별', params:[{id:'stagger',label:'글자간격',min:0.02,max:0.12,step:0.01,default:0.05,unit:'s'}] },
-    { id:'swing-effect', name:'Swing', tag:'글자별', params:[{id:'stagger',label:'글자간격',min:0.03,max:0.15,step:0.01,default:0.07,unit:'s'}] },
-    { id:'float-up', name:'Float Up', tag:'글자별', params:[{id:'stagger',label:'글자간격',min:0.03,max:0.12,step:0.01,default:0.06,unit:'s'},{id:'distance',label:'거리',min:20,max:80,step:5,default:50,unit:'px'}] },
-    { id:'domino-effect', name:'Domino', tag:'글자별', params:[{id:'stagger',label:'글자간격',min:0.03,max:0.12,step:0.01,default:0.06,unit:'s'}] },
-    { id:'neon-effect', name:'Neon', tag:'루프', params:[{id:'speed',label:'속도',min:1,max:4,step:0.5,default:2,unit:'s'}] },
-    { id:'gradient-wave', name:'Gradient', tag:'루프', params:[{id:'speed',label:'속도',min:1,max:6,step:0.5,default:3,unit:'s'}] },
-    { id:'shadow-dance', name:'Shadow', tag:'루프', params:[{id:'speed',label:'속도',min:1,max:4,step:0.5,default:2,unit:'s'}] },
-    { id:'pulse-effect', name:'Pulse', tag:'루프', params:[{id:'speed',label:'속도',min:0.5,max:3,step:0.25,default:1.5,unit:'s'},{id:'scale',label:'크기',min:1.02,max:1.2,step:0.02,default:1.05,unit:'x'}] },
-    { id:'flicker-effect', name:'Flicker', tag:'루프', params:[{id:'speed',label:'속도',min:0.5,max:3,step:0.25,default:1.5,unit:'s'}] },
-    { id:'rainbow-effect', name:'Rainbow', tag:'루프', params:[{id:'speed',label:'속도',min:1,max:6,step:0.5,default:3,unit:'s'}] },
-    { id:'glitch-effect', name:'Glitch', tag:'액션', params:[{id:'speed',label:'속도',min:0.5,max:4,step:0.5,default:2,unit:'s'},{id:'intensity',label:'강도',min:1,max:8,step:1,default:3,unit:'px'}] },
-    { id:'shake-effect', name:'Shake', tag:'액션', params:[{id:'intensity',label:'강도',min:3,max:15,step:1,default:10,unit:'px'}] },
-    { id:'explode-effect', name:'Explode', tag:'액션', params:[{id:'range',label:'폭발범위',min:50,max:400,step:25,default:200,unit:'px'},{id:'stagger',label:'글자간격',min:0.01,max:0.08,step:0.01,default:0.03,unit:'s'}] },
+    { id:'fade-in', name:'Fade In', tag:'등장', params:[
+        {id:'duration',label:'지속시간',min:0.1,max:5,step:0.1,default:1.2,unit:'s'},
+        {id:'delay',label:'딜레이',min:0,max:3,step:0.05,default:0,unit:'s'},
+        {id:'easing',label:'이징',type:'select',options:['ease','ease-in','ease-out','ease-in-out','linear','cubic-bezier(0.68,-0.55,0.27,1.55)'],labels:['Ease','Ease In','Ease Out','Ease In-Out','Linear','Bounce Back'],default:'ease'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.2,unit:'s'}
+    ]},
+    { id:'fade-in-up', name:'Fade Up', tag:'등장', params:[
+        {id:'duration',label:'지속시간',min:0.1,max:5,step:0.1,default:1.2,unit:'s'},
+        {id:'distance',label:'이동거리',min:5,max:120,step:1,default:30,unit:'px'},
+        {id:'easing',label:'이징',type:'select',options:['ease','ease-out','cubic-bezier(0.16,1,0.3,1)','cubic-bezier(0.34,1.56,0.64,1)'],labels:['Ease','Ease Out','Expo Out','Back Out'],default:'ease'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.2,unit:'s'}
+    ]},
+    { id:'fade-in-scale', name:'Fade Scale', tag:'등장', params:[
+        {id:'duration',label:'지속시간',min:0.1,max:5,step:0.1,default:1.2,unit:'s'},
+        {id:'startScale',label:'시작크기',min:0.01,max:2,step:0.05,default:0.7,unit:'x'},
+        {id:'easing',label:'이징',type:'select',options:['ease','ease-out','cubic-bezier(0.34,1.56,0.64,1)'],labels:['Ease','Ease Out','Overshoot'],default:'ease'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.2,unit:'s'}
+    ]},
+    { id:'slide-left', name:'Slide Left', tag:'등장', params:[
+        {id:'duration',label:'지속시간',min:0.1,max:3,step:0.1,default:0.8,unit:'s'},
+        {id:'distance',label:'이동거리',min:10,max:300,step:5,default:80,unit:'px'},
+        {id:'easing',label:'이징',type:'select',options:['ease','ease-out','cubic-bezier(0.16,1,0.3,1)','cubic-bezier(0.68,-0.55,0.27,1.55)'],labels:['Ease','Ease Out','Expo Out','Elastic'],default:'ease'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.2,unit:'s'}
+    ]},
+    { id:'slide-right', name:'Slide Right', tag:'등장', params:[
+        {id:'duration',label:'지속시간',min:0.1,max:3,step:0.1,default:0.8,unit:'s'},
+        {id:'distance',label:'이동거리',min:10,max:300,step:5,default:80,unit:'px'},
+        {id:'easing',label:'이징',type:'select',options:['ease','ease-out','cubic-bezier(0.16,1,0.3,1)','cubic-bezier(0.68,-0.55,0.27,1.55)'],labels:['Ease','Ease Out','Expo Out','Elastic'],default:'ease'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.2,unit:'s'}
+    ]},
+    { id:'blur-reveal', name:'Blur Reveal', tag:'등장', params:[
+        {id:'duration',label:'지속시간',min:0.3,max:5,step:0.1,default:1.5,unit:'s'},
+        {id:'blur',label:'블러량',min:2,max:50,step:1,default:20,unit:'px'},
+        {id:'spacing',label:'자간확대',min:0,max:20,step:1,default:8,unit:'px'},
+        {id:'easing',label:'이징',type:'select',options:['ease','ease-out','cubic-bezier(0.16,1,0.3,1)'],labels:['Ease','Ease Out','Expo Out'],default:'ease'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.3,unit:'s'}
+    ]},
+    { id:'drop-in', name:'Drop In', tag:'등장', params:[
+        {id:'duration',label:'지속시간',min:0.2,max:3,step:0.1,default:0.7,unit:'s'},
+        {id:'height',label:'낙하높이',min:10,max:200,step:5,default:60,unit:'px'},
+        {id:'bounce',label:'바운스',min:0,max:20,step:1,default:8,unit:'px'},
+        {id:'easing',label:'이징',type:'select',options:['ease','cubic-bezier(0.34,1.56,0.64,1)','cubic-bezier(0.68,-0.55,0.27,1.55)'],labels:['Ease','Overshoot','Elastic'],default:'ease'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.15,unit:'s'}
+    ]},
+    { id:'zoom-effect', name:'Zoom', tag:'등장', params:[
+        {id:'duration',label:'지속시간',min:0.2,max:3,step:0.1,default:0.8,unit:'s'},
+        {id:'startScale',label:'시작크기',min:1.5,max:8,step:0.5,default:3,unit:'x'},
+        {id:'blur',label:'블러',min:0,max:20,step:1,default:10,unit:'px'},
+        {id:'easing',label:'이징',type:'select',options:['ease','ease-out','cubic-bezier(0.16,1,0.3,1)'],labels:['Ease','Ease Out','Expo Out'],default:'ease'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.2,unit:'s'}
+    ]},
+    { id:'typing-effect', name:'Typing', tag:'타이핑', params:[
+        {id:'speed',label:'전체속도',min:0.5,max:8,step:0.25,default:2.5,unit:'s'},
+        {id:'cursorWidth',label:'커서 두께',min:1,max:5,step:1,default:2,unit:'px'},
+        {id:'cursorSpeed',label:'커서깜빡',min:0.3,max:1.5,step:0.1,default:0.7,unit:'s'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:3,step:0.25,default:0,unit:'s'}
+    ]},
+    { id:'bounce-effect', name:'Bounce', tag:'글자별', params:[
+        {id:'stagger',label:'글자간격',min:0.01,max:0.2,step:0.005,default:0.05,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.2,max:2,step:0.1,default:0.6,unit:'s'},
+        {id:'height',label:'낙하높이',min:10,max:120,step:5,default:50,unit:'px'},
+        {id:'overshoot',label:'오버슈트',min:1,max:1.4,step:0.05,default:1.1,unit:'x'},
+        {id:'easing',label:'이징',type:'select',options:['ease','cubic-bezier(0.34,1.56,0.64,1)','cubic-bezier(0.68,-0.55,0.27,1.55)'],labels:['Ease','Overshoot','Elastic'],default:'ease'}
+    ]},
+    { id:'wave-effect', name:'Wave', tag:'글자별', params:[
+        {id:'speed',label:'속도',min:0.5,max:5,step:0.1,default:1.5,unit:'s'},
+        {id:'height',label:'높이',min:3,max:40,step:1,default:12,unit:'px'},
+        {id:'stagger',label:'글자위상',min:0.03,max:0.2,step:0.01,default:0.08,unit:'s'}
+    ]},
+    { id:'rubber-band', name:'Rubber Band', tag:'글자별', params:[
+        {id:'stagger',label:'글자간격',min:0.01,max:0.2,step:0.005,default:0.06,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.4,max:2,step:0.1,default:1,unit:'s'},
+        {id:'intensity',label:'탄성강도',min:0.1,max:0.6,step:0.05,default:0.4,unit:'x'}
+    ]},
+    { id:'flip-effect', name:'3D Flip', tag:'글자별', params:[
+        {id:'stagger',label:'글자간격',min:0.01,max:0.2,step:0.005,default:0.06,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.3,max:2,step:0.1,default:0.8,unit:'s'},
+        {id:'angle',label:'회전각도',min:45,max:180,step:15,default:90,unit:'°'},
+        {id:'direction',label:'방향',type:'select',options:['X','Y'],labels:['위아래','좌우'],default:'X'}
+    ]},
+    { id:'jelly-effect', name:'Jelly', tag:'글자별', params:[
+        {id:'stagger',label:'글자간격',min:0.01,max:0.15,step:0.005,default:0.05,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.3,max:2,step:0.1,default:0.8,unit:'s'},
+        {id:'squash',label:'찌그러짐',min:0.5,max:1.5,step:0.1,default:1.3,unit:'x'},
+        {id:'dropHeight',label:'낙하높이',min:15,max:80,step:5,default:40,unit:'px'}
+    ]},
+    { id:'scatter-effect', name:'Scatter', tag:'글자별', params:[
+        {id:'range',label:'흩어짐거리',min:30,max:500,step:10,default:200,unit:'px'},
+        {id:'rotation',label:'회전범위',min:90,max:1080,step:90,default:720,unit:'°'},
+        {id:'stagger',label:'글자간격',min:0.01,max:0.12,step:0.005,default:0.04,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.5,max:2.5,step:0.1,default:1,unit:'s'},
+        {id:'easing',label:'이징',type:'select',options:['cubic-bezier(0.175,0.885,0.32,1.275)','ease','cubic-bezier(0.68,-0.55,0.27,1.55)'],labels:['Back Out','Ease','Elastic'],default:'cubic-bezier(0.175,0.885,0.32,1.275)'}
+    ]},
+    { id:'spin-effect', name:'Spin', tag:'글자별', params:[
+        {id:'stagger',label:'글자간격',min:0.02,max:0.2,step:0.01,default:0.07,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.3,max:2,step:0.1,default:0.8,unit:'s'},
+        {id:'turns',label:'회전수',min:0.5,max:3,step:0.5,default:1,unit:'회'}
+    ]},
+    { id:'pop-effect', name:'Pop', tag:'글자별', params:[
+        {id:'stagger',label:'글자간격',min:0.01,max:0.15,step:0.005,default:0.05,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.2,max:1.5,step:0.1,default:0.5,unit:'s'},
+        {id:'overshoot',label:'오버슈트',min:1,max:1.8,step:0.1,default:1.3,unit:'x'}
+    ]},
+    { id:'swing-effect', name:'Swing', tag:'글자별', params:[
+        {id:'stagger',label:'글자간격',min:0.02,max:0.2,step:0.01,default:0.07,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.5,max:2.5,step:0.1,default:1,unit:'s'},
+        {id:'angle',label:'최대각도',min:10,max:60,step:5,default:40,unit:'°'}
+    ]},
+    { id:'float-up', name:'Float Up', tag:'글자별', params:[
+        {id:'stagger',label:'글자간격',min:0.02,max:0.15,step:0.01,default:0.06,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.5,max:3,step:0.1,default:1.2,unit:'s'},
+        {id:'distance',label:'떠오름거리',min:10,max:120,step:5,default:50,unit:'px'},
+        {id:'rotate',label:'기울기',min:0,max:15,step:1,default:5,unit:'°'}
+    ]},
+    { id:'domino-effect', name:'Domino', tag:'글자별', params:[
+        {id:'stagger',label:'글자간격',min:0.02,max:0.15,step:0.005,default:0.06,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.3,max:1.5,step:0.1,default:0.6,unit:'s'},
+        {id:'angle',label:'쓰러짐각',min:30,max:120,step:10,default:80,unit:'°'}
+    ]},
+    { id:'neon-effect', name:'Neon', tag:'루프', params:[
+        {id:'speed',label:'속도',min:0.5,max:6,step:0.25,default:2,unit:'s'},
+        {id:'glowSize',label:'글로우크기',min:3,max:100,step:1,default:42,unit:'px'},
+        {id:'color1',label:'주 색상',type:'color',default:'#00d4ff'},
+        {id:'color2',label:'보조 색상',type:'color',default:'#00ffaa'},
+        {id:'iterations',label:'반복',type:'select',options:['infinite','1','2','3','5'],labels:['무한','1회','2회','3회','5회'],default:'infinite'}
+    ]},
+    { id:'gradient-wave', name:'Gradient', tag:'루프', params:[
+        {id:'speed',label:'속도',min:0.5,max:10,step:0.5,default:3,unit:'s'},
+        {id:'color1',label:'색상1',type:'color',default:'#00d4ff'},
+        {id:'color2',label:'색상2',type:'color',default:'#ff006e'},
+        {id:'color3',label:'색상3',type:'color',default:'#667eea'},
+        {id:'iterations',label:'반복',type:'select',options:['infinite','1','2','3'],labels:['무한','1회','2회','3회'],default:'infinite'}
+    ]},
+    { id:'shadow-dance', name:'Shadow', tag:'루프', params:[
+        {id:'speed',label:'속도',min:0.5,max:6,step:0.25,default:2,unit:'s'},
+        {id:'offset',label:'그림자거리',min:1,max:12,step:1,default:4,unit:'px'},
+        {id:'color1',label:'색상1',type:'color',default:'#ff006e'},
+        {id:'color2',label:'색상2',type:'color',default:'#00d4ff'},
+        {id:'iterations',label:'반복',type:'select',options:['infinite','1','2','3','5'],labels:['무한','1회','2회','3회','5회'],default:'infinite'}
+    ]},
+    { id:'pulse-effect', name:'Pulse', tag:'루프', params:[
+        {id:'speed',label:'속도',min:0.3,max:5,step:0.1,default:1.5,unit:'s'},
+        {id:'scale',label:'확대비율',min:1.01,max:1.4,step:0.01,default:1.05,unit:'x'},
+        {id:'opacity',label:'투명도변화',min:0.3,max:1,step:0.05,default:0.8,unit:''},
+        {id:'iterations',label:'반복',type:'select',options:['infinite','1','2','3','5'],labels:['무한','1회','2회','3회','5회'],default:'infinite'}
+    ]},
+    { id:'flicker-effect', name:'Flicker', tag:'루프', params:[
+        {id:'speed',label:'속도',min:0.3,max:4,step:0.1,default:1.5,unit:'s'},
+        {id:'minOpacity',label:'최소투명도',min:0,max:0.7,step:0.05,default:0.2,unit:''},
+        {id:'iterations',label:'반복',type:'select',options:['infinite','2','3','5','10'],labels:['무한','2회','3회','5회','10회'],default:'infinite'}
+    ]},
+    { id:'rainbow-effect', name:'Rainbow', tag:'루프', params:[
+        {id:'speed',label:'속도',min:0.5,max:10,step:0.5,default:3,unit:'s'},
+        {id:'iterations',label:'반복',type:'select',options:['infinite','1','2','3'],labels:['무한','1회','2회','3회'],default:'infinite'}
+    ]},
+    { id:'glitch-effect', name:'Glitch', tag:'액션', params:[
+        {id:'speed',label:'속도',min:0.3,max:6,step:0.1,default:2,unit:'s'},
+        {id:'intensity',label:'강도',min:1,max:12,step:0.5,default:3,unit:'px'},
+        {id:'color1',label:'채널1색상',type:'color',default:'#ff006e'},
+        {id:'color2',label:'채널2색상',type:'color',default:'#00d4ff'},
+        {id:'iterations',label:'반복',type:'select',options:['infinite','1','2','3','5'],labels:['무한','1회','2회','3회','5회'],default:'infinite'}
+    ]},
+    { id:'shake-effect', name:'Shake', tag:'액션', params:[
+        {id:'intensity',label:'강도',min:1,max:25,step:1,default:10,unit:'px'},
+        {id:'duration',label:'지속시간',min:0.2,max:2,step:0.1,default:0.6,unit:'s'},
+        {id:'rotation',label:'회전',min:0,max:5,step:0.5,default:2,unit:'°'},
+        {id:'iterations',label:'반복',type:'select',options:['1','2','3','infinite'],labels:['1회','2회','3회','무한'],default:'1'}
+    ]},
+    { id:'explode-effect', name:'Explode', tag:'액션', params:[
+        {id:'range',label:'폭발범위',min:30,max:600,step:10,default:200,unit:'px'},
+        {id:'rotation',label:'회전범위',min:90,max:1080,step:90,default:720,unit:'°'},
+        {id:'stagger',label:'글자간격',min:0.005,max:0.1,step:0.005,default:0.03,unit:'s'},
+        {id:'duration',label:'지속시간',min:0.5,max:3,step:0.1,default:1.2,unit:'s'}
+    ]},
 ];
 
 // === STATE ===
@@ -67,15 +212,15 @@ function animateHoverPreviews() {
             const previewEl = card.querySelector('.preview-text');
             if (!previewEl) return;
             const mid = previewEl.dataset.motion;
-            previewEl.parentElement.style.display = 'flex';
             renderMiniPreview(previewEl, mid);
         });
         card.addEventListener('mouseleave', () => {
             const previewEl = card.querySelector('.preview-text');
             if (previewEl) {
-                previewEl.innerHTML = '가나다';
-                previewEl.style = '';
+                previewEl.innerHTML = '';
+                previewEl.style.cssText = '';
                 previewEl.className = 'preview-text';
+                previewEl.setAttribute('data-motion', previewEl.dataset.motion);
             }
         });
     });
@@ -166,17 +311,28 @@ function selectMotion(motion) {
     motion.params.forEach(p => {
         const ctrl = document.createElement('div');
         ctrl.className = 'ctrl';
-        ctrl.innerHTML = `
-            <label>${p.label}</label>
-            <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.default}" data-param="${p.id}">
-            <div class="val">${p.default}${p.unit}</div>
-        `;
-        const input = ctrl.querySelector('input');
-        const val = ctrl.querySelector('.val');
-        input.addEventListener('input', e => {
-            motionParams[p.id] = parseFloat(e.target.value);
-            val.textContent = `${e.target.value}${p.unit}`;
-        });
+
+        if (p.type === 'select') {
+            ctrl.innerHTML = `<label>${p.label}</label><select data-param="${p.id}">${p.options.map((o,i) => `<option value="${o}" ${o===p.default?'selected':''}>${p.labels[i]}</option>`).join('')}</select>`;
+            const sel = ctrl.querySelector('select');
+            sel.addEventListener('change', e => { motionParams[p.id] = e.target.value; });
+        } else if (p.type === 'color') {
+            ctrl.innerHTML = `<label>${p.label}</label><input type="color" value="${p.default}" data-param="${p.id}">`;
+            const inp = ctrl.querySelector('input');
+            inp.addEventListener('input', e => { motionParams[p.id] = e.target.value; });
+        } else {
+            ctrl.innerHTML = `
+                <label>${p.label}</label>
+                <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.default}" data-param="${p.id}">
+                <div class="val">${p.default}${p.unit}</div>
+            `;
+            const input = ctrl.querySelector('input');
+            const val = ctrl.querySelector('.val');
+            input.addEventListener('input', e => {
+                motionParams[p.id] = parseFloat(e.target.value);
+                val.textContent = `${e.target.value}${p.unit}`;
+            });
+        }
         detailControls.appendChild(ctrl);
     });
 
