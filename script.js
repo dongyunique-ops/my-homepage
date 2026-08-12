@@ -315,11 +315,11 @@ function selectMotion(motion) {
         if (p.type === 'select') {
             ctrl.innerHTML = `<label>${p.label}</label><select data-param="${p.id}">${p.options.map((o,i) => `<option value="${o}" ${o===p.default?'selected':''}>${p.labels[i]}</option>`).join('')}</select>`;
             const sel = ctrl.querySelector('select');
-            sel.addEventListener('change', e => { motionParams[p.id] = e.target.value; });
+            sel.addEventListener('change', e => { motionParams[p.id] = e.target.value; liveUpdate(); });
         } else if (p.type === 'color') {
             ctrl.innerHTML = `<label>${p.label}</label><input type="color" value="${p.default}" data-param="${p.id}">`;
             const inp = ctrl.querySelector('input');
-            inp.addEventListener('input', e => { motionParams[p.id] = e.target.value; });
+            inp.addEventListener('input', e => { motionParams[p.id] = e.target.value; liveUpdate(); });
         } else {
             ctrl.innerHTML = `
                 <label>${p.label}</label>
@@ -331,12 +331,37 @@ function selectMotion(motion) {
             input.addEventListener('input', e => {
                 motionParams[p.id] = parseFloat(e.target.value);
                 val.textContent = `${e.target.value}${p.unit}`;
+                liveUpdate();
             });
         }
         detailControls.appendChild(ctrl);
     });
 
     detailPanel.style.display = 'block';
+
+    // Auto-apply on first select
+    liveUpdate();
+}
+
+// Live update preview when params change
+function liveUpdate() {
+    const text = getCurrentText();
+    if (!text || !selectedMotion) return;
+    const font = document.getElementById('fontSelect').value;
+    const fontSize = document.getElementById('fontSizeRange').value;
+    const lines = text.split('\n').filter(l => l.trim());
+    const stage = document.getElementById('previewStage');
+    stage.innerHTML = '';
+    document.getElementById('replayBtn').style.display = 'inline-block';
+    document.getElementById('exportBtn').style.display = 'inline-block';
+    lines.forEach((line, idx) => {
+        const el = document.createElement('div');
+        el.className = `motion-line ${font}`;
+        el.style.fontSize = `${fontSize}rem`;
+        el.textContent = line;
+        applyEffect(el, selectedMotion.id, line, idx, motionParams);
+        stage.appendChild(el);
+    });
 }
 
 document.getElementById('detailClose').addEventListener('click', () => {
@@ -385,11 +410,12 @@ async function performOCR(img) {
 }
 
 // === FONT SIZE ===
-document.getElementById('fontSizeRange').addEventListener('input', e => { document.getElementById('fontSizeValue').textContent=`${e.target.value}rem`; });
+document.getElementById('fontSizeRange').addEventListener('input', e => { document.getElementById('fontSizeValue').textContent=`${e.target.value}rem`; liveUpdate(); });
+document.getElementById('fontSelect').addEventListener('change', () => liveUpdate());
 
 // === APPLY MOTION ===
-document.getElementById('applyMotion').addEventListener('click', applyMotionToText);
-document.getElementById('replayBtn').addEventListener('click', applyMotionToText);
+document.getElementById('applyMotion').addEventListener('click', liveUpdate);
+document.getElementById('replayBtn').addEventListener('click', liveUpdate);
 
 function getCurrentText() {
     const tab = document.querySelector('.tab.active').dataset.tab;
@@ -397,27 +423,7 @@ function getCurrentText() {
 }
 
 function applyMotionToText() {
-    const text = getCurrentText();
-    if(!text || !selectedMotion) return;
-
-    const font = document.getElementById('fontSelect').value;
-    const fontSize = document.getElementById('fontSizeRange').value;
-    const lines = text.split('\n').filter(l=>l.trim());
-    const stage = document.getElementById('previewStage');
-
-    stage.innerHTML = '';
-    document.getElementById('replayBtn').style.display = 'inline-block';
-
-    lines.forEach((line, idx) => {
-        const el = document.createElement('div');
-        el.className = `motion-line ${font}`;
-        el.style.fontSize = `${fontSize}rem`;
-        el.textContent = line;
-        applyEffect(el, selectedMotion.id, line, idx, motionParams);
-        stage.appendChild(el);
-    });
-
-    stage.scrollIntoView({behavior:'smooth',block:'center'});
+    liveUpdate();
 }
 
 function applyEffect(el, motion, line, idx, p) {
@@ -508,3 +514,122 @@ function splitChars(el, line, className, lineIdx, stagger) {
 const sty=document.createElement('style');
 sty.textContent=`@keyframes typing{from{width:0}to{width:100%}}`;
 document.head.appendChild(sty);
+
+// === EXPORT AS TRANSPARENT VIDEO (WebM) ===
+document.getElementById('exportBtn').addEventListener('click', exportVideo);
+
+async function exportVideo() {
+    const stage = document.getElementById('previewStage');
+    const btn = document.getElementById('exportBtn');
+    if (!stage.querySelector('.motion-line')) return;
+
+    btn.textContent = '녹화 중...';
+    btn.disabled = true;
+
+    // Create offscreen canvas
+    const rect = stage.getBoundingClientRect();
+    const scale = 2; // retina
+    const canvas = document.createElement('canvas');
+    canvas.width = rect.width * scale;
+    canvas.height = rect.height * scale;
+    const ctx = canvas.getContext('2d');
+
+    // Use html2canvas-like approach: capture via MediaRecorder on a canvas stream
+    // We'll use the experimental captureStream on a cloned element rendered to canvas
+    // Simpler approach: use DOM + requestAnimationFrame + canvas drawImage from foreignObject
+
+    // Best approach for transparent video: record the stage element
+    const duration = estimateDuration();
+
+    // Re-trigger animation
+    liveUpdate();
+
+    // Use a hidden div for recording with transparent bg
+    const recordDiv = document.createElement('div');
+    recordDiv.style.cssText = `position:fixed;top:-9999px;left:0;width:${rect.width}px;height:${rect.height}px;background:transparent;overflow:hidden;`;
+    recordDiv.innerHTML = stage.innerHTML;
+    document.body.appendChild(recordDiv);
+
+    // Record using MediaRecorder with canvas
+    const recCanvas = document.createElement('canvas');
+    recCanvas.width = Math.round(rect.width * scale);
+    recCanvas.height = Math.round(rect.height * scale);
+    const recCtx = recCanvas.getContext('2d');
+
+    const stream = recCanvas.captureStream(60);
+    const chunks = [];
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 5000000 });
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'text-motion.webm';
+        a.click();
+        URL.revokeObjectURL(url);
+        btn.textContent = '영상 내보내기 (WebM)';
+        btn.disabled = false;
+        document.body.removeChild(recordDiv);
+    };
+
+    recorder.start();
+
+    // Render frames using html-to-image approach (foreignObject SVG)
+    const totalFrames = Math.ceil(duration * 60);
+    let frame = 0;
+
+    function drawFrame() {
+        if (frame >= totalFrames) {
+            recorder.stop();
+            return;
+        }
+
+        // Draw stage content to canvas using foreignObject
+        const svgData = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="${recCanvas.width}" height="${recCanvas.height}">
+                <foreignObject width="100%" height="100%">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="width:${rect.width}px;height:${rect.height}px;transform:scale(${scale});transform-origin:top left;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.8rem;">
+                        ${stage.innerHTML}
+                    </div>
+                </foreignObject>
+            </svg>`;
+
+        const img = new Image();
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+
+        img.onload = () => {
+            recCtx.clearRect(0, 0, recCanvas.width, recCanvas.height);
+            recCtx.drawImage(img, 0, 0);
+            URL.revokeObjectURL(svgUrl);
+            frame++;
+            requestAnimationFrame(drawFrame);
+        };
+        img.onerror = () => {
+            // Fallback: just clear
+            recCtx.clearRect(0, 0, recCanvas.width, recCanvas.height);
+            frame++;
+            requestAnimationFrame(drawFrame);
+        };
+        img.src = svgUrl;
+    }
+
+    drawFrame();
+}
+
+function estimateDuration() {
+    // Estimate based on motion params
+    if (!selectedMotion) return 3;
+    const p = motionParams;
+    const text = getCurrentText();
+    const lines = text ? text.split('\n').filter(l=>l.trim()) : ['test'];
+    const lineCount = lines.length;
+    const maxLineLen = Math.max(...lines.map(l=>l.length));
+
+    let dur = 3; // default
+    if (p.duration) dur = p.duration + lineCount * (p.lineDelay || 0.2);
+    if (p.speed) dur = p.speed * lineCount;
+    if (p.stagger) dur = p.stagger * maxLineLen * lineCount + 1;
+    return Math.min(Math.max(dur + 0.5, 2), 10); // clamp 2-10s
+}
