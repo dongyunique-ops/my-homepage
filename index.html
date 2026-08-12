@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>텍스트 모션 테스트 - 배민 폰트</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
     <header>
         <nav>
             <div class="logo">Text Motion Lab</div>
             <ul class="nav-links">
+                <li><a href="#ocr">OCR</a></li>
                 <li><a href="#fade">Fade</a></li>
                 <li><a href="#slide">Slide</a></li>
                 <li><a href="#typing">Typing</a></li>
@@ -25,7 +27,81 @@
         <!-- Hero -->
         <section class="hero">
             <h1 class="hero-title">텍스트 모션 테스트</h1>
-            <p class="hero-subtitle">배달의민족 폰트로 다양한 텍스트 애니메이션을 체험해보세요</p>
+            <p class="hero-subtitle">이미지 속 텍스트를 추출해서 모션을 입혀보세요</p>
+        </section>
+
+        <!-- OCR Upload -->
+        <section id="ocr" class="motion-section ocr-section">
+            <h2 class="section-title">이미지에서 텍스트 추출</h2>
+            <div class="ocr-container">
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📷</div>
+                    <p class="upload-text">이미지를 드래그하거나 클릭해서 업로드</p>
+                    <p class="upload-hint">텍스트가 포함된 이미지를 넣어주세요</p>
+                    <input type="file" id="imageInput" accept="image/*" hidden>
+                </div>
+
+                <!-- Image Preview -->
+                <div class="image-preview" id="imagePreview" style="display:none;">
+                    <img id="previewImg" alt="업로드 이미지">
+                    <button class="remove-img-btn" id="removeImg">✕</button>
+                </div>
+
+                <!-- OCR Progress -->
+                <div class="ocr-progress" id="ocrProgress" style="display:none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-text" id="progressText">텍스트 인식 중...</p>
+                </div>
+
+                <!-- Result Area -->
+                <div class="ocr-result" id="ocrResult" style="display:none;">
+                    <h3 class="result-title">추출된 텍스트</h3>
+                    <div class="extracted-text" id="extractedText"></div>
+
+                    <!-- Controls -->
+                    <div class="motion-controls">
+                        <div class="control-group">
+                            <label>폰트 선택</label>
+                            <select id="fontSelect">
+                                <option value="font-dohyun">도현체</option>
+                                <option value="font-jua">주아체</option>
+                                <option value="font-hanna">한나체</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>모션 선택</label>
+                            <select id="motionSelect">
+                                <option value="fade-in">Fade In</option>
+                                <option value="fade-in-up">Fade In Up</option>
+                                <option value="fade-in-scale">Fade In Scale</option>
+                                <option value="slide-left">Slide Left</option>
+                                <option value="slide-right">Slide Right</option>
+                                <option value="typing-effect">Typing</option>
+                                <option value="bounce-effect">Bounce</option>
+                                <option value="wave-effect">Wave</option>
+                                <option value="glitch-effect">Glitch</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>글자 크기</label>
+                            <input type="range" id="fontSizeRange" min="1" max="5" step="0.5" value="2.5">
+                            <span id="fontSizeValue">2.5rem</span>
+                        </div>
+                    </div>
+
+                    <button class="apply-btn" id="applyMotion">모션 적용</button>
+                </div>
+
+                <!-- Motion Preview -->
+                <div class="motion-preview" id="motionPreview" style="display:none;">
+                    <h3 class="result-title">모션 미리보기</h3>
+                    <div class="preview-stage" id="previewStage"></div>
+                    <button class="replay-btn" id="replayOcr">다시 재생</button>
+                </div>
+            </div>
         </section>
 
         <!-- Fade In/Out -->
