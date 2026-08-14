@@ -538,39 +538,48 @@ async function exportVideo() {
     const btn = document.getElementById('exportBtn');
     if (!stage.querySelector('.motion-line')) return;
 
-    btn.textContent = '녹화 중...';
+    btn.textContent = '녹화 준비 중...';
     btn.disabled = true;
 
-    const rect = stage.getBoundingClientRect();
-    const w = Math.round(rect.width);
-    const h = Math.round(rect.height);
-    const canvas = document.createElement('canvas');
-    canvas.width = w * 2;
-    canvas.height = h * 2;
-    const ctx = canvas.getContext('2d');
+    // Set green screen background on stage
+    const originalBg = stage.style.background;
+    const originalBorder = stage.style.border;
+    stage.style.background = '#00ff00';
+    stage.style.border = 'none';
+
+    // Re-trigger animation
+    liveUpdate();
+    stage.style.background = '#00ff00';
+    stage.style.border = 'none';
 
     const duration = estimateDuration();
     const fps = 30;
     const totalFrames = Math.ceil(duration * fps);
+    const frameInterval = 1000 / fps;
 
-    // Re-trigger animation
-    liveUpdate();
+    // Setup canvas for recording
+    const rect = stage.getBoundingClientRect();
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(rect.width * 2);
+    canvas.height = Math.round(rect.height * 2);
+    const ctx = canvas.getContext('2d');
 
     const stream = canvas.captureStream(fps);
     const chunks = [];
 
-    // Try MP4 first, fallback to WebM
     let mimeType = 'video/webm;codecs=vp9';
     if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
         mimeType = 'video/mp4;codecs=avc1';
-    } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
-        mimeType = 'video/webm;codecs=h264';
     }
     const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
 
     const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
     recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     recorder.onstop = () => {
+        // Restore stage
+        stage.style.background = originalBg;
+        stage.style.border = originalBorder;
+
         const blob = new Blob(chunks, { type: mimeType.split(';')[0] });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -582,44 +591,39 @@ async function exportVideo() {
         btn.disabled = false;
     };
 
+    btn.textContent = '녹화 중...';
     recorder.start();
 
     let frame = 0;
-    function renderFrame() {
+    async function captureFrame() {
         if (frame >= totalFrames) {
             recorder.stop();
             return;
         }
-        // Green screen background
-        ctx.fillStyle = '#00ff00';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw stage content
-        const stageClone = stage.cloneNode(true);
-        const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}">
-            <foreignObject width="100%" height="100%">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="width:${w}px;height:${h}px;transform:scale(2);transform-origin:top left;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.8rem;padding:2rem;">
-                    ${stage.innerHTML}
-                </div>
-            </foreignObject>
-        </svg>`;
+        try {
+            const capturedCanvas = await html2canvas(stage, {
+                backgroundColor: '#00ff00',
+                scale: 2,
+                useCORS: true,
+                logging: false
+            });
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
+        } catch(e) {
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
-        const img = new Image();
-        const blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
-        const url = URL.createObjectURL(blob);
-        img.onload = () => {
-            ctx.drawImage(img, 0, 0);
-            URL.revokeObjectURL(url);
-            frame++;
-            requestAnimationFrame(renderFrame);
-        };
-        img.onerror = () => {
-            frame++;
-            requestAnimationFrame(renderFrame);
-        };
-        img.src = url;
+        frame++;
+        const progress = Math.round((frame / totalFrames) * 100);
+        btn.textContent = `녹화 중... ${progress}%`;
+
+        setTimeout(captureFrame, frameInterval);
     }
-    renderFrame();
+
+    // Small delay to let animation start
+    setTimeout(captureFrame, 100);
 }
 
 function estimateDuration() {
