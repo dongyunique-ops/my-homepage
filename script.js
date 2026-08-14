@@ -530,7 +530,7 @@ const sty=document.createElement('style');
 sty.textContent=`@keyframes typing{from{width:0}to{width:100%}}`;
 document.head.appendChild(sty);
 
-// === EXPORT AS MP4 (GREEN SCREEN) ===
+// === EXPORT AS MP4 (WebCodecs + mp4-muxer) ===
 document.getElementById('exportBtn').addEventListener('click', exportVideo);
 
 async function exportVideo() {
@@ -538,10 +538,21 @@ async function exportVideo() {
     const btn = document.getElementById('exportBtn');
     if (!stage.querySelector('.motion-line')) return;
 
-    btn.textContent = '녹화 준비 중...';
+    // Check WebCodecs support
+    if (typeof VideoEncoder === 'undefined') {
+        alert('이 브라우저는 MP4 내보내기를 지원하지 않습니다. Chrome을 사용해주세요.');
+        return;
+    }
+
+    btn.textContent = '준비 중...';
     btn.disabled = true;
 
-    // Set green screen background on stage
+    const duration = estimateDuration();
+    const fps = 30;
+    const totalFrames = Math.ceil(duration * fps);
+    const frameInterval = 1000 / fps;
+
+    // Set green screen
     const originalBg = stage.style.background;
     const originalBorder = stage.style.border;
     stage.style.background = '#00ff00';
@@ -552,78 +563,99 @@ async function exportVideo() {
     stage.style.background = '#00ff00';
     stage.style.border = 'none';
 
-    const duration = estimateDuration();
-    const fps = 30;
-    const totalFrames = Math.ceil(duration * fps);
-    const frameInterval = 1000 / fps;
+    // Wait for first frame
+    await new Promise(r => setTimeout(r, 100));
 
-    // Setup canvas for recording
-    const rect = stage.getBoundingClientRect();
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(rect.width * 2);
-    canvas.height = Math.round(rect.height * 2);
-    const ctx = canvas.getContext('2d');
+    // Capture first frame to get dimensions
+    const firstCapture = await html2canvas(stage, { backgroundColor: '#00ff00', scale: 2, logging: false });
+    const width = Math.round(firstCapture.width / 2) * 2; // ensure even
+    const height = Math.round(firstCapture.height / 2) * 2;
 
-    const stream = canvas.captureStream(fps);
-    const chunks = [];
+    // Setup mp4-muxer
+    const muxer = new Mp4Muxer.Muxer({
+        target: new Mp4Muxer.ArrayBufferTarget(),
+        video: {
+            codec: 'avc',
+            width: width,
+            height: height
+        },
+        fastStart: 'in-memory'
+    });
 
-    let mimeType = 'video/webm;codecs=vp9';
-    if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
-        mimeType = 'video/mp4;codecs=avc1';
-    }
-    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    // Setup VideoEncoder
+    let frameCount = 0;
+    const encoder = new VideoEncoder({
+        output: (chunk, meta) => {
+            muxer.addVideoChunk(chunk, meta);
+        },
+        error: (e) => console.error('Encoder error:', e)
+    });
 
-    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
-    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-    recorder.onstop = () => {
-        // Restore stage
-        stage.style.background = originalBg;
-        stage.style.border = originalBorder;
+    encoder.configure({
+        codec: 'avc1.640028',
+        width: width,
+        height: height,
+        bitrate: 8_000_000,
+        framerate: fps
+    });
 
-        const blob = new Blob(chunks, { type: mimeType.split(';')[0] });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `text-motion.${ext}`;
-        a.click();
-        URL.revokeObjectURL(url);
-        btn.textContent = 'MP4 내보내기 (그린스크린)';
-        btn.disabled = false;
-    };
+    btn.textContent = '녹화 중... 0%';
 
-    btn.textContent = '녹화 중...';
-    recorder.start();
+    // Capture frames
+    for (let i = 0; i < totalFrames; i++) {
+        const captured = await html2canvas(stage, {
+            backgroundColor: '#00ff00',
+            scale: 2,
+            logging: false,
+            width: stage.offsetWidth,
+            height: stage.offsetHeight
+        });
 
-    let frame = 0;
-    async function captureFrame() {
-        if (frame >= totalFrames) {
-            recorder.stop();
-            return;
-        }
+        // Draw to correctly-sized canvas
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.width = width;
+        frameCanvas.height = height;
+        const ctx = frameCanvas.getContext('2d');
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(captured, 0, 0, width, height);
 
-        try {
-            const capturedCanvas = await html2canvas(stage, {
-                backgroundColor: '#00ff00',
-                scale: 2,
-                useCORS: true,
-                logging: false
-            });
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
-        } catch(e) {
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        const frame = new VideoFrame(frameCanvas, {
+            timestamp: i * (1_000_000 / fps), // microseconds
+            duration: 1_000_000 / fps
+        });
 
-        frame++;
-        const progress = Math.round((frame / totalFrames) * 100);
+        const isKeyFrame = i % (fps * 2) === 0; // keyframe every 2 seconds
+        encoder.encode(frame, { keyFrame: isKeyFrame });
+        frame.close();
+
+        const progress = Math.round(((i + 1) / totalFrames) * 100);
         btn.textContent = `녹화 중... ${progress}%`;
 
-        setTimeout(captureFrame, frameInterval);
+        // Yield to allow animation to progress
+        await new Promise(r => setTimeout(r, frameInterval));
     }
 
-    // Small delay to let animation start
-    setTimeout(captureFrame, 100);
+    // Finalize
+    await encoder.flush();
+    muxer.finalize();
+
+    // Restore stage
+    stage.style.background = originalBg;
+    stage.style.border = originalBorder;
+
+    // Download
+    const buffer = muxer.target.buffer;
+    const blob = new Blob([buffer], { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'text-motion.mp4';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    btn.textContent = 'MP4 내보내기 (그린스크린)';
+    btn.disabled = false;
 }
 
 function estimateDuration() {
