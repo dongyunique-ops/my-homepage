@@ -530,7 +530,7 @@ const sty=document.createElement('style');
 sty.textContent=`@keyframes typing{from{width:0}to{width:100%}}`;
 document.head.appendChild(sty);
 
-// === EXPORT AS MP4 (WebCodecs + mp4-muxer) ===
+// === EXPORT AS MP4 (Canvas 직접 렌더링) ===
 document.getElementById('exportBtn').addEventListener('click', exportVideo);
 
 async function exportVideo() {
@@ -538,113 +538,105 @@ async function exportVideo() {
     const btn = document.getElementById('exportBtn');
     if (!stage.querySelector('.motion-line')) return;
 
-    // Check WebCodecs support
     if (typeof VideoEncoder === 'undefined') {
-        alert('이 브라우저는 MP4 내보내기를 지원하지 않습니다. Chrome을 사용해주세요.');
+        alert('Chrome 브라우저에서만 MP4 내보내기가 지원됩니다.');
         return;
     }
 
     btn.textContent = '준비 중...';
     btn.disabled = true;
 
+    const text = getCurrentText();
+    if (!text) { btn.textContent = 'MP4 내보내기 (그린스크린)'; btn.disabled = false; return; }
+
+    const lines = text.split('\n').filter(l => l.trim());
+    const font = document.getElementById('fontSelect').value;
+    const fontSize = parseFloat(document.getElementById('fontSizeRange').value);
+
+    const width = 1280;
+    const height = 720;
     const duration = estimateDuration();
     const fps = 30;
     const totalFrames = Math.ceil(duration * fps);
-    const frameInterval = 1000 / fps;
 
-    // Set green screen
-    const originalBg = stage.style.background;
-    const originalBorder = stage.style.border;
-    stage.style.background = '#00ff00';
-    stage.style.border = 'none';
+    // Load font into canvas
+    await document.fonts.ready;
 
-    // Re-trigger animation
-    liveUpdate();
-    stage.style.background = '#00ff00';
-    stage.style.border = 'none';
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
 
-    // Wait for first frame
-    await new Promise(r => setTimeout(r, 100));
-
-    // Capture first frame to get dimensions
-    const firstCapture = await html2canvas(stage, { backgroundColor: '#00ff00', scale: 2, logging: false });
-    const width = Math.round(firstCapture.width / 2) * 2; // ensure even
-    const height = Math.round(firstCapture.height / 2) * 2;
+    // Font name mapping
+    const fontMap = { 'font-work': 'BAEMINWORK' };
+    const fontName = fontMap[font] || 'BAEMINWORK';
+    const pxSize = fontSize * 32; // rem to px approximation
 
     // Setup mp4-muxer
     const muxer = new Mp4Muxer.Muxer({
         target: new Mp4Muxer.ArrayBufferTarget(),
-        video: {
-            codec: 'avc',
-            width: width,
-            height: height
-        },
+        video: { codec: 'avc', width, height },
         fastStart: 'in-memory'
     });
 
-    // Setup VideoEncoder
-    let frameCount = 0;
     const encoder = new VideoEncoder({
-        output: (chunk, meta) => {
-            muxer.addVideoChunk(chunk, meta);
-        },
-        error: (e) => console.error('Encoder error:', e)
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: e => console.error('Encoder error:', e)
     });
 
     encoder.configure({
         codec: 'avc1.640028',
-        width: width,
-        height: height,
-        bitrate: 8_000_000,
+        width, height,
+        bitrate: 6_000_000,
         framerate: fps
     });
 
-    btn.textContent = '녹화 중... 0%';
+    btn.textContent = '렌더링 중... 0%';
 
-    // Capture frames
     for (let i = 0; i < totalFrames; i++) {
-        const captured = await html2canvas(stage, {
-            backgroundColor: '#00ff00',
-            scale: 2,
-            logging: false,
-            width: stage.offsetWidth,
-            height: stage.offsetHeight
-        });
+        const t = i / fps; // current time in seconds
 
-        // Draw to correctly-sized canvas
-        const frameCanvas = document.createElement('canvas');
-        frameCanvas.width = width;
-        frameCanvas.height = height;
-        const ctx = frameCanvas.getContext('2d');
+        // Green screen background
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(captured, 0, 0, width, height);
 
-        const frame = new VideoFrame(frameCanvas, {
-            timestamp: i * (1_000_000 / fps), // microseconds
-            duration: 1_000_000 / fps
+        // Draw text with animation state
+        ctx.font = `${pxSize}px ${fontName}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const lineHeight = pxSize * 1.4;
+        const totalHeight = lines.length * lineHeight;
+        const startY = (height - totalHeight) / 2 + lineHeight / 2;
+
+        lines.forEach((line, idx) => {
+            const lineDelay = idx * (motionParams.lineDelay || 0.2);
+            const lt = t - lineDelay; // local time for this line
+            const x = width / 2;
+            const y = startY + idx * lineHeight;
+
+            ctx.save();
+            renderAnimatedText(ctx, line, x, y, lt, pxSize, fontName);
+            ctx.restore();
         });
 
-        const isKeyFrame = i % (fps * 2) === 0; // keyframe every 2 seconds
-        encoder.encode(frame, { keyFrame: isKeyFrame });
+        const frame = new VideoFrame(canvas, {
+            timestamp: i * (1_000_000 / fps),
+            duration: 1_000_000 / fps
+        });
+        encoder.encode(frame, { keyFrame: i % (fps * 2) === 0 });
         frame.close();
 
-        const progress = Math.round(((i + 1) / totalFrames) * 100);
-        btn.textContent = `녹화 중... ${progress}%`;
-
-        // Yield to allow animation to progress
-        await new Promise(r => setTimeout(r, frameInterval));
+        if (i % 5 === 0) {
+            const progress = Math.round(((i + 1) / totalFrames) * 100);
+            btn.textContent = `렌더링 중... ${progress}%`;
+            await new Promise(r => setTimeout(r, 0)); // yield
+        }
     }
 
-    // Finalize
     await encoder.flush();
     muxer.finalize();
 
-    // Restore stage
-    stage.style.background = originalBg;
-    stage.style.border = originalBorder;
-
-    // Download
     const buffer = muxer.target.buffer;
     const blob = new Blob([buffer], { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
@@ -656,6 +648,195 @@ async function exportVideo() {
 
     btn.textContent = 'MP4 내보내기 (그린스크린)';
     btn.disabled = false;
+}
+
+function renderAnimatedText(ctx, line, x, y, t, pxSize, fontName) {
+    if (!selectedMotion) { ctx.fillStyle = '#fff'; ctx.fillText(line, x, y); return; }
+    const motion = selectedMotion.id;
+    const p = motionParams;
+    const dur = p.duration || 1.2;
+
+    // Easing
+    function easeOut(v) { return 1 - Math.pow(1 - v, 3); }
+    function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+    ctx.fillStyle = '#ffffff';
+
+    switch(motion) {
+        case 'fade-in':
+        case 'fade-in-up':
+        case 'fade-in-scale':
+        case 'blur-reveal':
+        case 'drop-in':
+        case 'zoom-effect':
+        case 'slide-left':
+        case 'slide-right': {
+            const progress = clamp01(t / dur);
+            const ep = easeOut(progress);
+            const alpha = ep;
+            ctx.globalAlpha = alpha;
+
+            let offsetX = 0, offsetY = 0, scale = 1;
+            if (motion === 'fade-in-up') offsetY = (1 - ep) * (p.distance || 30);
+            if (motion === 'fade-in-scale') scale = (p.startScale || 0.7) + ep * (1 - (p.startScale || 0.7));
+            if (motion === 'drop-in') offsetY = -(1 - ep) * (p.height || 60);
+            if (motion === 'zoom-effect') scale = (p.startScale || 3) - ep * ((p.startScale || 3) - 1);
+            if (motion === 'slide-left') offsetX = -(1 - ep) * (p.distance || 80);
+            if (motion === 'slide-right') offsetX = (1 - ep) * (p.distance || 80);
+
+            ctx.translate(x + offsetX, y + offsetY);
+            ctx.scale(scale, scale);
+            ctx.fillText(line, 0, 0);
+            break;
+        }
+        case 'typing-effect': {
+            const speed = p.speed || 2.5;
+            const charsToShow = Math.floor(clamp01(t / speed) * line.length);
+            const visibleText = line.substring(0, charsToShow);
+            ctx.fillText(visibleText, x, y);
+            // Cursor
+            if (t < speed + 1) {
+                const cursorOn = Math.floor(t / 0.5) % 2 === 0;
+                if (cursorOn) {
+                    const tw = ctx.measureText(visibleText).width;
+                    ctx.fillStyle = '#00d4ff';
+                    ctx.fillRect(x + tw / 2 + 2, y - pxSize * 0.4, 3, pxSize * 0.8);
+                }
+            }
+            break;
+        }
+        case 'bounce-effect':
+        case 'wave-effect':
+        case 'rubber-band':
+        case 'jelly-effect':
+        case 'pop-effect':
+        case 'spin-effect':
+        case 'swing-effect':
+        case 'float-up':
+        case 'domino-effect':
+        case 'flip-effect':
+        case 'scatter-effect': {
+            // Per-character animation
+            const stagger = p.stagger || 0.06;
+            const chars = line.split('');
+            const totalWidth = ctx.measureText(line).width;
+            let cx = x - totalWidth / 2;
+
+            chars.forEach((char, ci) => {
+                const charW = ctx.measureText(char).width;
+                const charT = t - ci * stagger;
+                const charProgress = clamp01(charT / (p.duration || 0.8));
+                const ep = easeOut(charProgress);
+
+                ctx.save();
+                ctx.globalAlpha = ep;
+
+                let dx = cx + charW / 2;
+                let dy = y;
+
+                if (motion === 'bounce-effect') dy = y - (1 - ep) * (p.height || 50) * (charT < 0 ? 0 : 1);
+                if (motion === 'wave-effect') { ctx.globalAlpha = 1; dy = y + Math.sin((t - ci * (stagger)) * Math.PI * 2 / (p.speed || 1.5)) * (p.height || 12); }
+                if (motion === 'float-up') dy = y + (1 - ep) * (p.distance || 50);
+                if (motion === 'pop-effect') { const s = charT < 0 ? 0 : ep > 0.7 ? 1 : ep * (p.overshoot || 1.3); ctx.translate(dx, dy); ctx.scale(s, s); ctx.fillText(char, 0, 0); ctx.restore(); cx += charW; return; }
+                if (motion === 'spin-effect') { const angle = (1 - ep) * Math.PI * 2 * (p.turns || 1); ctx.translate(dx, dy); ctx.rotate(angle); ctx.scale(ep, ep); ctx.fillText(char, 0, 0); ctx.restore(); cx += charW; return; }
+
+                ctx.translate(dx, dy);
+                ctx.fillText(char, 0, 0);
+                ctx.restore();
+                cx += charW;
+            });
+            break;
+        }
+        case 'neon-effect': {
+            const flicker = Math.sin(t * 8) > 0.3 ? 1 : 0.2;
+            ctx.globalAlpha = flicker;
+            ctx.shadowColor = p.color1 || '#00d4ff';
+            ctx.shadowBlur = p.glowSize || 42;
+            ctx.fillText(line, x, y);
+            ctx.shadowBlur = 0;
+            break;
+        }
+        case 'gradient-wave':
+        case 'rainbow-effect': {
+            const hueShift = (t / (p.speed || 3)) * 360;
+            ctx.fillStyle = `hsl(${hueShift % 360}, 100%, 60%)`;
+            ctx.fillText(line, x, y);
+            break;
+        }
+        case 'shadow-dance': {
+            const offset = p.offset || 4;
+            const angle = t * Math.PI;
+            ctx.shadowColor = p.color1 || '#ff006e';
+            ctx.shadowOffsetX = Math.cos(angle) * offset;
+            ctx.shadowOffsetY = Math.sin(angle) * offset;
+            ctx.shadowBlur = 0;
+            ctx.fillText(line, x, y);
+            ctx.shadowColor = p.color2 || '#00d4ff';
+            ctx.shadowOffsetX = -Math.cos(angle) * offset;
+            ctx.shadowOffsetY = -Math.sin(angle) * offset;
+            ctx.fillText(line, x, y);
+            break;
+        }
+        case 'glitch-effect': {
+            const intensity = p.intensity || 3;
+            const glitchX = (Math.random() - 0.5) * intensity * 2;
+            ctx.fillText(line, x + glitchX, y);
+            ctx.fillStyle = p.color1 || '#ff006e';
+            ctx.globalAlpha = 0.5;
+            ctx.fillText(line, x + intensity, y);
+            ctx.fillStyle = p.color2 || '#00d4ff';
+            ctx.fillText(line, x - intensity, y);
+            break;
+        }
+        case 'shake-effect': {
+            const intensity = p.intensity || 10;
+            const shakeT = clamp01(t / (p.duration || 0.6));
+            const decay = 1 - shakeT;
+            const sx = (Math.random() - 0.5) * intensity * decay * 2;
+            const sy = (Math.random() - 0.5) * intensity * decay * 0.5;
+            ctx.fillText(line, x + sx, y + sy);
+            break;
+        }
+        case 'pulse-effect': {
+            const scale = 1 + Math.sin(t * Math.PI * 2 / (p.speed || 1.5)) * ((p.scale || 1.05) - 1);
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            ctx.fillText(line, 0, 0);
+            break;
+        }
+        case 'flicker-effect': {
+            const flick = Math.random() > 0.3 ? 1 : (p.minOpacity || 0.2);
+            ctx.globalAlpha = flick;
+            ctx.fillText(line, x, y);
+            break;
+        }
+        case 'explode-effect': {
+            const stagger = p.stagger || 0.03;
+            const chars = line.split('');
+            const totalWidth = ctx.measureText(line).width;
+            let cx = x - totalWidth / 2;
+            chars.forEach((char, ci) => {
+                const charW = ctx.measureText(char).width;
+                const charT = t - ci * stagger;
+                const progress = clamp01(charT / (p.duration || 1.2));
+                ctx.save();
+                ctx.globalAlpha = 1 - progress;
+                const range = p.range || 200;
+                const angle = (ci / chars.length) * Math.PI * 2;
+                const dx = cx + charW / 2 + Math.cos(angle) * range * progress;
+                const dy = y + Math.sin(angle) * range * progress;
+                ctx.translate(dx, dy);
+                ctx.rotate(progress * Math.PI * 2);
+                ctx.scale(1 - progress * 0.8, 1 - progress * 0.8);
+                ctx.fillText(char, 0, 0);
+                ctx.restore();
+                cx += charW;
+            });
+            break;
+        }
+        default:
+            ctx.fillText(line, x, y);
+    }
 }
 
 function estimateDuration() {
