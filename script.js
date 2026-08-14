@@ -654,13 +654,17 @@ function renderAnimatedText(ctx, line, x, y, t, pxSize, fontName) {
     if (!selectedMotion) { ctx.fillStyle = '#fff'; ctx.fillText(line, x, y); return; }
     const motion = selectedMotion.id;
     const p = motionParams;
-    const dur = p.duration || 1.2;
+    const dur = p.duration || p.speed || 1.2;
 
-    // Easing
+    // If time is negative, text hasn't started yet - don't draw
+    if (t < 0) { ctx.globalAlpha = 0; return; }
+
+    // Easing functions
     function easeOut(v) { return 1 - Math.pow(1 - v, 3); }
     function clamp01(v) { return Math.max(0, Math.min(1, v)); }
 
     ctx.fillStyle = '#ffffff';
+    ctx.font = `${pxSize}px ${fontName}`;
 
     switch(motion) {
         case 'fade-in':
@@ -846,11 +850,22 @@ function estimateDuration() {
     const lines = text ? text.split('\n').filter(l=>l.trim()) : ['test'];
     const lineCount = lines.length;
     const maxLen = Math.max(...lines.map(l=>l.length));
-    let dur = 3;
-    if (p.duration) dur = p.duration + lineCount * (p.lineDelay || 0.2);
-    if (p.speed) dur = p.speed * lineCount;
-    if (p.stagger) dur = p.stagger * maxLen * lineCount + 1;
-    return Math.min(Math.max(dur + 0.5, 2), 10);
+
+    let dur = 0;
+    const baseDur = p.duration || p.speed || 1.2;
+    const stagger = p.stagger || 0;
+    const lineDelay = p.lineDelay || 0.2;
+
+    // Total time = last line's delay + base duration + char stagger
+    dur = (lineCount - 1) * lineDelay + baseDur + stagger * maxLen;
+
+    // Add extra buffer for looping effects
+    const loopMotions = ['neon-effect','gradient-wave','shadow-dance','pulse-effect','flicker-effect','rainbow-effect','wave-effect'];
+    if (loopMotions.includes(selectedMotion.id)) {
+        dur = Math.max(dur, (p.speed || 3) * 2); // at least 2 full cycles
+    }
+
+    return Math.min(Math.max(dur + 0.5, 2), 12);
 }
 
 // === MASKING FEATURE ===
