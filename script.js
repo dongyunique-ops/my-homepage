@@ -480,24 +480,33 @@ function applyEffect(el, motion, line, idx, p) {
         case 'swing-effect': splitChars(el,line,'swing-char',idx,p.stagger||0.07); break;
         case 'float-up': splitChars(el,line,'float-char',idx,p.stagger||0.06); break;
         case 'domino-effect': splitChars(el,line,'domino-char',idx,p.stagger||0.06); break;
-        case 'neon-effect': el.style.animation=`neonFlicker ${p.speed||2}s ease-in-out infinite alternate`; break;
+        case 'neon-effect':
+            el.style.animation = `neonFlicker ${p.speed||2}s ease-in-out ${p.iterations||'infinite'} alternate`;
+            el.style.textShadow = `0 0 7px ${p.color1||'#00d4ff'}, 0 0 ${p.glowSize||42}px ${p.color2||'#00ffaa'}`;
+            break;
         case 'gradient-wave':
-            el.style.background='linear-gradient(90deg,#00d4ff,#ff006e,#667eea,#00d4ff)';
+            el.style.background=`linear-gradient(90deg,${p.color1||'#00d4ff'},${p.color2||'#ff006e'},${p.color3||'#667eea'},${p.color1||'#00d4ff'})`;
             el.style.backgroundSize='300% 100%'; el.style.webkitBackgroundClip='text';
             el.style.backgroundClip='text'; el.style.color='transparent';
-            el.style.animation=`gradientShift ${p.speed||3}s ease infinite`; break;
-        case 'shadow-dance': el.style.animation=`shadowDance ${p.speed||2}s ease-in-out infinite`; break;
-        case 'pulse-effect': el.style.animation=`pulse ${p.speed||1.5}s ease-in-out infinite`; break;
-        case 'flicker-effect': el.style.animation=`flicker ${p.speed||1.5}s linear infinite`; break;
-        case 'rainbow-effect': el.style.animation=`rainbow ${p.speed||3}s linear infinite`; break;
+            el.style.animation=`gradientShift ${p.speed||3}s ease ${p.iterations||'infinite'}`;
+            break;
+        case 'shadow-dance':
+            el.style.animation=`shadowDance ${p.speed||2}s ease-in-out ${p.iterations||'infinite'}`;
+            el.style.setProperty('--sd-color1', p.color1||'#ff006e');
+            el.style.setProperty('--sd-color2', p.color2||'#00d4ff');
+            el.style.textShadow=`${p.offset||4}px ${p.offset||4}px 0 ${p.color1||'#ff006e'}, -${p.offset||4}px -${p.offset||4}px 0 ${p.color2||'#00d4ff'}`;
+            break;
+        case 'pulse-effect': el.style.animation=`pulse ${p.speed||1.5}s ease-in-out ${p.iterations||'infinite'}`; break;
+        case 'flicker-effect': el.style.animation=`flicker ${p.speed||1.5}s linear ${p.iterations||'infinite'}`; break;
+        case 'rainbow-effect': el.style.animation=`rainbow ${p.speed||3}s linear ${p.iterations||'infinite'}`; break;
         case 'glitch-effect':
-            el.style.position='relative'; el.style.animation=`glitchText ${p.speed||2}s infinite`;
+            el.style.position='relative'; el.style.animation=`glitchText ${p.speed||2}s ${p.iterations||'infinite'}`;
             const b=document.createElement('span'); b.textContent=line;
-            b.style.cssText=`position:absolute;top:0;left:0;width:100%;color:#ff006e;animation:glitchBefore ${p.speed||2}s infinite;clip-path:inset(0 0 60% 0)`;
+            b.style.cssText=`position:absolute;top:0;left:0;width:100%;color:${p.color1||'#ff006e'};animation:glitchBefore ${p.speed||2}s ${p.iterations||'infinite'};clip-path:inset(0 0 60% 0)`;
             const a=document.createElement('span'); a.textContent=line;
-            a.style.cssText=`position:absolute;top:0;left:0;width:100%;color:#00d4ff;animation:glitchAfter ${p.speed||2}s infinite;clip-path:inset(60% 0 0 0)`;
+            a.style.cssText=`position:absolute;top:0;left:0;width:100%;color:${p.color2||'#00d4ff'};animation:glitchAfter ${p.speed||2}s ${p.iterations||'infinite'};clip-path:inset(60% 0 0 0)`;
             el.appendChild(b); el.appendChild(a); break;
-        case 'shake-effect': el.style.animation=`shakeIt 0.6s ease both`; el.style.animationDelay=`${delay}s`; break;
+        case 'shake-effect': el.style.animation=`shakeIt ${p.duration||0.6}s ease both`; el.style.animationIterationCount=p.iterations||'1'; el.style.animationDelay=`${delay}s`; break;
         case 'explode-effect':
             el.textContent='';
             const er=p.range||200;
@@ -729,20 +738,110 @@ function renderAnimatedText(ctx, line, x, y, t, pxSize, fontName) {
             chars.forEach((char, ci) => {
                 const charW = ctx.measureText(char).width;
                 const charT = t - ci * stagger;
+                if (charT < 0 && motion !== 'wave-effect') { cx += charW; return; } // not started yet
                 const charProgress = clamp01(charT / (p.duration || 0.8));
                 const ep = easeOut(charProgress);
 
                 ctx.save();
-                ctx.globalAlpha = ep;
+                ctx.globalAlpha = motion === 'wave-effect' ? 1 : ep;
 
                 let dx = cx + charW / 2;
                 let dy = y;
 
-                if (motion === 'bounce-effect') dy = y - (1 - ep) * (p.height || 50) * (charT < 0 ? 0 : 1);
-                if (motion === 'wave-effect') { ctx.globalAlpha = 1; dy = y + Math.sin((t - ci * (stagger)) * Math.PI * 2 / (p.speed || 1.5)) * (p.height || 12); }
-                if (motion === 'float-up') dy = y + (1 - ep) * (p.distance || 50);
-                if (motion === 'pop-effect') { const s = charT < 0 ? 0 : ep > 0.7 ? 1 : ep * (p.overshoot || 1.3); ctx.translate(dx, dy); ctx.scale(s, s); ctx.fillText(char, 0, 0); ctx.restore(); cx += charW; return; }
-                if (motion === 'spin-effect') { const angle = (1 - ep) * Math.PI * 2 * (p.turns || 1); ctx.translate(dx, dy); ctx.rotate(angle); ctx.scale(ep, ep); ctx.fillText(char, 0, 0); ctx.restore(); cx += charW; return; }
+                if (motion === 'bounce-effect') {
+                    dy = y - (1 - ep) * (p.height || 50);
+                }
+                if (motion === 'wave-effect') {
+                    dy = y + Math.sin((t - ci * stagger) * Math.PI * 2 / (p.speed || 1.5)) * (p.height || 12);
+                }
+                if (motion === 'float-up') {
+                    dy = y + (1 - ep) * (p.distance || 50);
+                }
+                if (motion === 'rubber-band') {
+                    const intensity = p.intensity || 0.4;
+                    const phase = charProgress * Math.PI * 4;
+                    const scaleX = 1 + Math.sin(phase) * intensity * (1 - charProgress);
+                    const scaleY = 1 - Math.sin(phase) * intensity * (1 - charProgress);
+                    ctx.translate(dx, dy);
+                    ctx.scale(scaleX, scaleY);
+                    ctx.fillText(char, 0, 0);
+                    ctx.restore(); cx += charW; return;
+                }
+                if (motion === 'jelly-effect') {
+                    const dropH = p.dropHeight || 40;
+                    const squash = p.squash || 1.3;
+                    const fallProgress = clamp01(charT / ((p.duration || 0.8) * 0.4));
+                    const bounceProgress = clamp01((charT - (p.duration || 0.8) * 0.4) / ((p.duration || 0.8) * 0.6));
+                    const yOff = fallProgress < 1 ? -dropH * (1 - fallProgress) : Math.sin(bounceProgress * Math.PI * 2) * 5 * (1 - bounceProgress);
+                    const sx = fallProgress < 1 ? 1 : 1 + (squash - 1) * Math.sin(bounceProgress * Math.PI) * (1 - bounceProgress);
+                    const sy = fallProgress < 1 ? 1 : 1 - (squash - 1) * 0.5 * Math.sin(bounceProgress * Math.PI) * (1 - bounceProgress);
+                    ctx.translate(dx, dy + yOff);
+                    ctx.scale(sx, sy);
+                    ctx.fillText(char, 0, 0);
+                    ctx.restore(); cx += charW; return;
+                }
+                if (motion === 'swing-effect') {
+                    const maxAngle = (p.angle || 40) * Math.PI / 180;
+                    const swingDecay = Math.exp(-charProgress * 4);
+                    const angle = Math.sin(charProgress * Math.PI * 6) * maxAngle * swingDecay;
+                    ctx.translate(dx, dy - pxSize * 0.5);
+                    ctx.rotate(angle);
+                    ctx.translate(0, pxSize * 0.5);
+                    ctx.fillText(char, 0, 0);
+                    ctx.restore(); cx += charW; return;
+                }
+                if (motion === 'domino-effect') {
+                    const maxAngle = (p.angle || 80) * Math.PI / 180;
+                    const angle = -(1 - ep) * maxAngle;
+                    ctx.translate(dx - charW * 0.4, dy + pxSize * 0.3);
+                    ctx.rotate(angle);
+                    ctx.fillText(char, 0, 0);
+                    ctx.restore(); cx += charW; return;
+                }
+                if (motion === 'flip-effect') {
+                    const angle = (1 - ep) * ((p.angle || 90) * Math.PI / 180);
+                    const dir = p.direction || 'X';
+                    const scaleVal = Math.cos(angle);
+                    ctx.translate(dx, dy);
+                    if (dir === 'X') ctx.scale(1, Math.abs(scaleVal));
+                    else ctx.scale(Math.abs(scaleVal), 1);
+                    ctx.fillText(char, 0, 0);
+                    ctx.restore(); cx += charW; return;
+                }
+                if (motion === 'scatter-effect') {
+                    const range = p.range || 200;
+                    const rot = (p.rotation || 720) * Math.PI / 180;
+                    // Use deterministic random per char
+                    const seed = ci * 137.5;
+                    const rx = Math.sin(seed) * range;
+                    const ry = Math.cos(seed * 2.3) * range;
+                    const rr = Math.sin(seed * 3.7) * rot;
+                    const invP = 1 - ep;
+                    ctx.translate(dx + rx * invP, dy + ry * invP);
+                    ctx.rotate(rr * invP);
+                    ctx.scale(ep, ep);
+                    ctx.fillText(char, 0, 0);
+                    ctx.restore(); cx += charW; return;
+                }
+                if (motion === 'pop-effect') {
+                    const overshoot = p.overshoot || 1.3;
+                    let s;
+                    if (charProgress < 0.7) s = (charProgress / 0.7) * overshoot;
+                    else s = overshoot - (charProgress - 0.7) / 0.3 * (overshoot - 1);
+                    ctx.translate(dx, dy);
+                    ctx.scale(s, s);
+                    ctx.fillText(char, 0, 0);
+                    ctx.restore(); cx += charW; return;
+                }
+                if (motion === 'spin-effect') {
+                    const turns = p.turns || 1;
+                    const angle = (1 - ep) * Math.PI * 2 * turns;
+                    ctx.translate(dx, dy);
+                    ctx.rotate(angle);
+                    ctx.scale(ep, ep);
+                    ctx.fillText(char, 0, 0);
+                    ctx.restore(); cx += charW; return;
+                }
 
                 ctx.translate(dx, dy);
                 ctx.fillText(char, 0, 0);
