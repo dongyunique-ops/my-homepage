@@ -174,6 +174,16 @@ const MOTIONS = [
         {id:'stagger',label:'글자간격',min:0.005,max:0.1,step:0.005,default:0.03,unit:'s'},
         {id:'duration',label:'지속시간',min:0.5,max:3,step:0.1,default:1.2,unit:'s'}
     ]},
+    { id:'water-ripple', name:'Water Ripple', tag:'루프', params:[
+        {id:'speed',label:'물결속도',min:0.5,max:5,step:0.1,default:1.5,unit:'s'},
+        {id:'heightY',label:'상하진폭',min:1,max:20,step:1,default:6,unit:'px'},
+        {id:'heightX',label:'좌우진폭',min:0,max:10,step:0.5,default:2,unit:'px'},
+        {id:'skew',label:'왜곡(skew)',min:0,max:8,step:0.5,default:3,unit:'°'},
+        {id:'wavelength',label:'파장',min:0.05,max:0.5,step:0.01,default:0.15,unit:''},
+        {id:'intensity',label:'강도변화',min:0,max:2,step:0.1,default:0,unit:'x'},
+        {id:'color',label:'텍스트색상',type:'color',default:'#a0ffd0'},
+        {id:'iterations',label:'반복',type:'select',options:['infinite','3','5','10'],labels:['무한','3회','5회','10회'],default:'infinite'}
+    ]},
 ];
 
 // === STATE ===
@@ -517,6 +527,21 @@ function applyEffect(el, motion, line, idx, p) {
                 s.style.setProperty('--ey',`${(Math.random()-0.5)*er}px`);
                 s.style.setProperty('--er',`${(Math.random()-0.5)*720}deg`);
                 s.style.animationDelay=`${(idx*line.length+i)*(p.stagger||0.03)}s`;
+                el.appendChild(s);
+            });
+            break;
+        case 'water-ripple':
+            el.textContent='';
+            el.style.color = p.color || '#a0ffd0';
+            line.split('').forEach((c,i)=>{
+                const s=document.createElement('span'); s.textContent=c===' '?'\u00A0':c;
+                s.className='ripple-char';
+                s.style.animationDuration=`${p.speed||1.5}s`;
+                s.style.animationDelay=`${i*(p.wavelength||0.15)}s`;
+                s.style.setProperty('--ripple-y',`${p.heightY||6}px`);
+                s.style.setProperty('--ripple-x',`${p.heightX||2}px`);
+                s.style.setProperty('--ripple-skew',`${p.skew||3}deg`);
+                s.style.animationIterationCount=p.iterations||'infinite';
                 el.appendChild(s);
             });
             break;
@@ -931,6 +956,38 @@ function renderAnimatedText(ctx, line, x, y, t, pxSize, fontName) {
                 ctx.translate(dx, dy);
                 ctx.rotate(progress * Math.PI * 2);
                 ctx.scale(1 - progress * 0.8, 1 - progress * 0.8);
+                ctx.fillText(char, 0, 0);
+                ctx.restore();
+                cx += charW;
+            });
+            break;
+        }
+        case 'water-ripple': {
+            const speed = p.speed || 1.5;
+            const heightY = p.heightY || 6;
+            const heightX = p.heightX || 2;
+            const skewAmt = (p.skew || 3) * Math.PI / 180;
+            const wavelength = p.wavelength || 0.15;
+            const intensityMul = 1 + (p.intensity || 0) * Math.sin(t * 0.5);
+            ctx.fillStyle = p.color || '#a0ffd0';
+
+            const chars = line.split('');
+            const totalWidth = ctx.measureText(line).width;
+            let cx = x - totalWidth / 2;
+
+            chars.forEach((char, ci) => {
+                const charW = ctx.measureText(char).width;
+                const phase = t / speed * Math.PI * 2 - ci * wavelength * Math.PI * 2;
+                const sinVal = Math.sin(phase);
+                const cosVal = Math.cos(phase * 0.7);
+
+                const dy = sinVal * heightY * intensityMul;
+                const dx = cosVal * heightX * intensityMul;
+                const skew = sinVal * skewAmt * intensityMul;
+
+                ctx.save();
+                ctx.translate(cx + charW / 2 + dx, y + dy);
+                ctx.transform(1, 0, Math.tan(skew), 1, 0, 0); // skewX
                 ctx.fillText(char, 0, 0);
                 ctx.restore();
                 cx += charW;
