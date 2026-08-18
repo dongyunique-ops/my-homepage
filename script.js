@@ -175,12 +175,12 @@ const MOTIONS = [
         {id:'duration',label:'지속시간',min:0.5,max:3,step:0.1,default:1.2,unit:'s'}
     ]},
     { id:'water-ripple', name:'Water Ripple', tag:'루프', params:[
-        {id:'speed',label:'물결속도',min:0.5,max:5,step:0.1,default:1.5,unit:'s'},
-        {id:'heightY',label:'상하진폭',min:1,max:20,step:1,default:6,unit:'px'},
-        {id:'heightX',label:'좌우진폭',min:0,max:10,step:0.5,default:2,unit:'px'},
-        {id:'skew',label:'왜곡(skew)',min:0,max:8,step:0.5,default:3,unit:'°'},
-        {id:'wavelength',label:'파장',min:0.05,max:0.5,step:0.01,default:0.15,unit:''},
-        {id:'intensity',label:'강도변화',min:0,max:2,step:0.1,default:0,unit:'x'},
+        {id:'speed',label:'물결속도',min:0.3,max:8,step:0.1,default:1.5,unit:'s'},
+        {id:'heightY',label:'상하진폭',min:1,max:60,step:1,default:6,unit:'px'},
+        {id:'heightX',label:'좌우진폭',min:0,max:30,step:0.5,default:2,unit:'px'},
+        {id:'skew',label:'왜곡(skew)',min:0,max:30,step:0.5,default:3,unit:'°'},
+        {id:'wavelength',label:'파장',min:0.02,max:1,step:0.01,default:0.15,unit:''},
+        {id:'intensity',label:'강도변화',min:0,max:5,step:0.1,default:0,unit:'x'},
         {id:'color',label:'텍스트색상',type:'color',default:'#a0ffd0'},
         {id:'iterations',label:'반복',type:'select',options:['infinite','3','5','10'],labels:['무한','3회','5회','10회'],default:'infinite'}
     ]},
