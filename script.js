@@ -242,9 +242,9 @@ document.querySelectorAll('.tab').forEach(tab => {
         const panelId = `panel-${tab.dataset.tab}`;
         const panel = document.getElementById(panelId);
         if (panel) panel.classList.add('active');
-        // Update compose preview when switching to compose tab
-        if (tab.dataset.tab === 'compose') {
-            updateComposePreview();
+        // Update compose when switching to compose tab
+        if (tab.dataset.tab === 'compose' && selectedMotion) {
+            liveUpdateCompose();
         }
     });
 });
@@ -413,7 +413,7 @@ function liveUpdate() {
     document.getElementById('exportBtn').style.display = 'inline-block';
 
     if (activeTab === 'compose') {
-        updateComposePreview();
+        liveUpdateCompose();
         return;
     }
 
@@ -1175,97 +1175,154 @@ function estimateDuration() {
     return Math.min(Math.max(dur + 0.5, 2), 12);
 }
 
-// === COMPOSITION TAB ===
-let composeImageSrc = null;
+// === COMPOSITION CANVAS TAB ===
+const canvasStage = document.getElementById('canvasStage');
+const canvasAddImg = document.getElementById('canvasAddImg');
+const canvasAddTxt = document.getElementById('canvasAddTxt');
+const canvasImgInput = document.getElementById('canvasImgInput');
 
-const composeUpload = document.getElementById('composeUpload');
-const composeImageInput = document.getElementById('composeImageInput');
-const composeImgPreview = document.getElementById('composeImgPreview');
-const composeImg = document.getElementById('composeImg');
-const composeImgRemove = document.getElementById('composeImgRemove');
-
-composeUpload.addEventListener('click', () => composeImageInput.click());
-composeImageInput.addEventListener('change', e => {
+canvasAddImg.addEventListener('click', () => canvasImgInput.click());
+canvasImgInput.addEventListener('change', e => {
     if (e.target.files[0]) {
         const reader = new FileReader();
         reader.onload = ev => {
-            composeImg.src = ev.target.result;
-            composeImageSrc = ev.target.result;
-            composeUpload.style.display = 'none';
-            composeImgPreview.style.display = 'block';
-            updateComposePreview();
+            addCanvasItem('image', ev.target.result);
         };
         reader.readAsDataURL(e.target.files[0]);
+        e.target.value = '';
     }
 });
-composeImgRemove.addEventListener('click', () => {
-    composeUpload.style.display = 'block';
-    composeImgPreview.style.display = 'none';
-    composeImageSrc = null;
-    updateComposePreview();
+canvasAddTxt.addEventListener('click', () => {
+    addCanvasItem('text', '텍스트');
 });
 
-// Compose controls live update
-['imgX','imgY','imgScale','txtX','txtY','txtSize'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('input', () => {
-        const valEl = document.getElementById(id+'Val');
-        if (valEl) valEl.textContent = id === 'txtSize' ? el.value+'rem' : el.value+'%';
-        updateComposePreview();
-    });
-});
-document.getElementById('txtColor')?.addEventListener('input', () => updateComposePreview());
-document.getElementById('composeText')?.addEventListener('input', () => updateComposePreview());
+function addCanvasItem(type, content) {
+    const placeholder = document.getElementById('canvasPlaceholder');
+    if (placeholder) placeholder.remove();
 
-function updateComposePreview() {
-    const preview = document.getElementById('composePreview');
-    if (!preview) return;
-    preview.innerHTML = '';
+    const item = document.createElement('div');
+    item.className = 'canvas-item';
+    item.style.left = '50%';
+    item.style.top = '50%';
+    item.style.transform = 'translate(-50%,-50%)';
 
-    const imgX = document.getElementById('imgX')?.value || 50;
-    const imgY = document.getElementById('imgY')?.value || 30;
-    const imgScale = document.getElementById('imgScale')?.value || 80;
-    const txtX = document.getElementById('txtX')?.value || 50;
-    const txtY = document.getElementById('txtY')?.value || 70;
-    const txtSize = document.getElementById('txtSize')?.value || 3;
-    const txtColor = document.getElementById('txtColor')?.value || '#ffffff';
-    const text = document.getElementById('composeText')?.value || '';
-
-    if (composeImageSrc) {
+    if (type === 'image') {
         const img = document.createElement('img');
-        img.src = composeImageSrc;
-        img.className = 'comp-img';
-        img.style.left = `${imgX}%`;
-        img.style.top = `${imgY}%`;
-        img.style.transform = 'translate(-50%,-50%)';
-        img.style.width = `${imgScale}%`;
-        img.style.maxHeight = '80%';
-        img.style.objectFit = 'contain';
-
-        if (selectedMotion) applyEffectToElement(preview, img, selectedMotion.id, motionParams);
-        preview.appendChild(img);
-    }
-
-    if (text) {
+        img.src = content;
+        img.style.width = '200px';
+        item.appendChild(img);
+    } else {
         const txt = document.createElement('div');
-        txt.className = 'comp-txt font-work';
-        txt.textContent = text;
-        txt.style.left = `${txtX}%`;
-        txt.style.top = `${txtY}%`;
-        txt.style.transform = 'translate(-50%,-50%)';
-        txt.style.fontSize = `${txtSize}rem`;
-        txt.style.color = txtColor;
-
-        if (selectedMotion) {
-            const el = txt;
-            applyEffect(el, selectedMotion.id, text, 0, motionParams);
-        }
-        preview.appendChild(txt);
+        txt.className = 'canvas-text';
+        txt.contentEditable = 'true';
+        txt.textContent = content;
+        txt.style.fontSize = '2rem';
+        item.appendChild(txt);
     }
 
-    if (!composeImageSrc && !text) {
-        preview.innerHTML = '<p class="stage-placeholder">이미지와 텍스트를 추가하세요</p>';
+    // Resize handle
+    const handle = document.createElement('div');
+    handle.className = 'item-handle';
+    item.appendChild(handle);
+
+    // Drag logic
+    makeDraggable(item, handle);
+
+    item.addEventListener('click', e => {
+        e.stopPropagation();
+        document.querySelectorAll('.canvas-item').forEach(i => i.classList.remove('selected'));
+        item.classList.add('selected');
+    });
+
+    canvasStage.appendChild(item);
+}
+
+// Deselect on stage click
+canvasStage.addEventListener('click', e => {
+    if (e.target === canvasStage) {
+        document.querySelectorAll('.canvas-item').forEach(i => i.classList.remove('selected'));
+    }
+});
+
+function makeDraggable(el, resizeHandle) {
+    let isDragging = false, isResizing = false;
+    let startX, startY, startLeft, startTop, startWidth;
+
+    el.addEventListener('mousedown', e => {
+        if (e.target === resizeHandle) return;
+        if (e.target.contentEditable === 'true' && document.activeElement === e.target) return;
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = el.getBoundingClientRect();
+        const parentRect = canvasStage.getBoundingClientRect();
+        startLeft = rect.left - parentRect.left;
+        startTop = rect.top - parentRect.top;
+        el.style.transform = 'none';
+        el.style.left = startLeft + 'px';
+        el.style.top = startTop + 'px';
+        e.preventDefault();
+    });
+
+    resizeHandle.addEventListener('mousedown', e => {
+        isResizing = true;
+        startX = e.clientX;
+        const child = el.querySelector('img') || el.querySelector('.canvas-text');
+        startWidth = child.offsetWidth;
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    document.addEventListener('mousemove', e => {
+        if (isDragging) {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            el.style.left = (startLeft + dx) + 'px';
+            el.style.top = (startTop + dy) + 'px';
+        }
+        if (isResizing) {
+            const dx = e.clientX - startX;
+            const child = el.querySelector('img') || el.querySelector('.canvas-text');
+            const newW = Math.max(30, startWidth + dx);
+            if (child.tagName === 'IMG') child.style.width = newW + 'px';
+            else child.style.fontSize = Math.max(0.5, newW / 50) + 'rem';
+        }
+    });
+
+    document.addEventListener('mouseup', () => { isDragging = false; isResizing = false; });
+}
+
+// Apply motion to entire canvas stage
+function liveUpdateCompose() {
+    if (!selectedMotion) return;
+    // Remove previous animation
+    canvasStage.style.animation = 'none';
+    canvasStage.offsetHeight; // reflow
+    // Apply animation to the whole canvas stage
+    const p = motionParams;
+    const m = selectedMotion.id;
+    switch(m) {
+        case 'fade-in': canvasStage.style.animation=`fadeIn ${p.duration||1.2}s ${p.easing||'ease'} forwards`; break;
+        case 'fade-in-up': canvasStage.style.animation=`fadeInUp ${p.duration||1.2}s ${p.easing||'ease'} forwards`; break;
+        case 'fade-in-scale': canvasStage.style.animation=`fadeInScale ${p.duration||1.2}s ${p.easing||'ease'} forwards`; break;
+        case 'slide-left': canvasStage.style.animation=`slideLeft ${p.duration||0.8}s ${p.easing||'ease'} forwards`; break;
+        case 'slide-right': canvasStage.style.animation=`slideRight ${p.duration||0.8}s ${p.easing||'ease'} forwards`; break;
+        case 'blur-reveal': canvasStage.style.animation=`blurReveal ${p.duration||1.5}s ${p.easing||'ease'} forwards`; break;
+        case 'drop-in': canvasStage.style.animation=`dropIn ${p.duration||0.7}s ease forwards`; break;
+        case 'zoom-effect': canvasStage.style.animation=`zoomIn ${p.duration||0.8}s ease forwards`; break;
+        case 'neon-effect': canvasStage.style.animation=`neonImgFlicker ${p.speed||2}s ease-in-out ${p.iterations||'infinite'} alternate`; break;
+        case 'pulse-effect': canvasStage.style.animation=`pulse ${p.speed||1.5}s ease-in-out ${p.iterations||'infinite'}`; break;
+        case 'shake-effect': canvasStage.style.animation=`shakeIt ${p.duration||0.6}s ease both`; break;
+        case 'water-ripple': canvasStage.style.animation=`waterRippleImg ${p.speed||1.5}s ease-in-out ${p.iterations||'infinite'}`; canvasStage.style.setProperty('--ripple-y',`${p.heightY||6}px`); canvasStage.style.setProperty('--ripple-x',`${p.heightX||2}px`); canvasStage.style.setProperty('--ripple-skew',`${p.skew||3}deg`); break;
+        case 'cinematic-reveal': canvasStage.style.animation=`cinematicReveal ${p.duration||2}s ${p.easing||'cubic-bezier(0.77,0,0.175,1)'} forwards`; break;
+        case 'split-reveal': canvasStage.style.animation=`splitReveal ${p.duration||1.5}s ${p.easing||'cubic-bezier(0.77,0,0.175,1)'} forwards`; break;
+        case 'scale-bounce': canvasStage.style.animation=`scaleBounce ${p.duration||0.8}s cubic-bezier(0.34,1.56,0.64,1) forwards`; break;
+        case 'rotate-in': canvasStage.style.setProperty('--rot-angle',`${p.angle||90}deg`); canvasStage.style.setProperty('--rot-scale',p.scale||0.5); canvasStage.style.animation=`rotateIn ${p.duration||1.2}s ${p.easing||'cubic-bezier(0.34,1.56,0.64,1)'} forwards`; break;
+        case 'rainbow-effect': canvasStage.style.animation=`rainbowImg ${p.speed||3}s linear ${p.iterations||'infinite'}`; break;
+        case 'flicker-effect': canvasStage.style.animation=`flicker ${p.speed||1.5}s linear ${p.iterations||'infinite'}`; break;
+        case 'shadow-dance': canvasStage.style.animation=`shadowDanceImg ${p.speed||2}s ease-in-out ${p.iterations||'infinite'}`; break;
+        case 'glitch-effect': canvasStage.style.animation=`glitchText ${p.speed||2}s ${p.iterations||'infinite'}`; break;
+        default: canvasStage.style.animation=`fadeIn ${p.duration||1.2}s ease forwards`; break;
     }
 }
 
