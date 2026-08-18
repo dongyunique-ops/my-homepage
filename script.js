@@ -375,16 +375,16 @@ function liveUpdate() {
 
     if (activeTab === 'image' && uploadedImageSrc) {
         // Image motion mode
-        const font = document.getElementById('fontSelect').value;
         const el = document.createElement('div');
         el.className = 'motion-line';
+        el.style.display = 'inline-block';
         const img = document.createElement('img');
         img.src = uploadedImageSrc;
         img.style.maxWidth = '100%';
         img.style.maxHeight = '300px';
         img.style.display = 'block';
         el.appendChild(img);
-        applyEffectToElement(el, selectedMotion.id, motionParams);
+        applyEffectToElement(el, img, selectedMotion.id, motionParams);
         stage.appendChild(el);
     } else {
         // Text motion mode
@@ -405,8 +405,9 @@ function liveUpdate() {
 }
 
 // Apply motion to image element
-function applyEffectToElement(el, motion, p) {
+function applyEffectToElement(el, img, motion, p) {
     const delay = 0;
+    // Apply animation to the img directly for filter-based effects
     switch(motion) {
         case 'fade-in': el.style.opacity='0'; el.style.animation=`fadeIn ${p.duration||1.2}s ${p.easing||'ease'} ${delay}s forwards`; break;
         case 'fade-in-up': el.style.opacity='0'; el.style.animation=`fadeInUp ${p.duration||1.2}s ${p.easing||'ease'} forwards`; break;
@@ -417,15 +418,20 @@ function applyEffectToElement(el, motion, p) {
         case 'drop-in': el.style.opacity='0'; el.style.animation=`dropIn ${p.duration||0.7}s ${p.easing||'ease'} forwards`; break;
         case 'zoom-effect': el.style.opacity='0'; el.style.animation=`zoomIn ${p.duration||0.8}s ${p.easing||'ease'} forwards`; break;
         case 'neon-effect':
-            el.style.animation=`neonImgFlicker ${p.speed||2}s ease-in-out ${p.iterations||'infinite'} alternate`;
-            el.style.setProperty('--neon-color1', p.color1||'#00d4ff');
-            el.style.setProperty('--neon-color2', p.color2||'#00ffaa');
-            el.style.setProperty('--neon-glow', `${p.glowSize||42}px`);
+            img.style.animation=`neonImgFlicker ${p.speed||2}s ease-in-out ${p.iterations||'infinite'} alternate`;
+            img.style.setProperty('--neon-color1', p.color1||'#00d4ff');
+            img.style.setProperty('--neon-color2', p.color2||'#00ffaa');
+            img.style.setProperty('--neon-glow', `${p.glowSize||42}px`);
             break;
         case 'pulse-effect': el.style.animation=`pulse ${p.speed||1.5}s ease-in-out ${p.iterations||'infinite'}`; break;
         case 'shake-effect': el.style.animation=`shakeIt ${p.duration||0.6}s ease both`; el.style.animationIterationCount=p.iterations||'1'; break;
-        case 'shadow-dance': el.style.animation=`shadowDance ${p.speed||2}s ease-in-out ${p.iterations||'infinite'}`; break;
-        case 'flicker-effect': el.style.animation=`flicker ${p.speed||1.5}s linear ${p.iterations||'infinite'}`; break;
+        case 'shadow-dance':
+            img.style.animation=`shadowDanceImg ${p.speed||2}s ease-in-out ${p.iterations||'infinite'}`;
+            img.style.setProperty('--sd-color1', p.color1||'#ff006e');
+            img.style.setProperty('--sd-color2', p.color2||'#00d4ff');
+            img.style.setProperty('--sd-offset', `${p.offset||4}px`);
+            break;
+        case 'flicker-effect': img.style.animation=`flicker ${p.speed||1.5}s linear ${p.iterations||'infinite'}`; break;
         case 'water-ripple':
             el.style.animation=`waterRippleImg ${p.speed||1.5}s ease-in-out ${p.iterations||'infinite'}`;
             el.style.setProperty('--ripple-y',`${p.heightY||6}px`);
@@ -440,11 +446,10 @@ function applyEffectToElement(el, motion, p) {
             el.appendChild(overlay);
             break;
         case 'glitch-effect':
-            el.style.position='relative';
-            el.style.animation=`glitchText ${p.speed||2}s ${p.iterations||'infinite'}`;
+            img.style.animation=`glitchText ${p.speed||2}s ${p.iterations||'infinite'}`;
             break;
         case 'rainbow-effect':
-            el.style.animation=`rainbowImg ${p.speed||3}s linear ${p.iterations||'infinite'}`;
+            img.style.animation=`rainbowImg ${p.speed||3}s linear ${p.iterations||'infinite'}`;
             break;
         default:
             el.style.animation=`fadeIn ${p.duration||1.2}s ease forwards`;

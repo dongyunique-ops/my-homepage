@@ -233,6 +233,15 @@ footer { text-align:center; padding:2rem; color:#444; font-size:0.75rem; border-
     0%{filter:hue-rotate(0deg)}
     100%{filter:hue-rotate(360deg)}
 }
+
+/* Shadow Dance for image (drop-shadow) */
+@keyframes shadowDanceImg {
+    0%{filter:drop-shadow(var(--sd-offset,4px) var(--sd-offset,4px) 0 var(--sd-color1,#ff006e)) drop-shadow(calc(var(--sd-offset,4px) * -1) calc(var(--sd-offset,4px) * -1) 0 var(--sd-color2,#00d4ff))}
+    25%{filter:drop-shadow(calc(var(--sd-offset,4px) * -1) var(--sd-offset,4px) 0 var(--sd-color2,#00d4ff)) drop-shadow(var(--sd-offset,4px) calc(var(--sd-offset,4px) * -1) 0 var(--sd-color1,#ff006e))}
+    50%{filter:drop-shadow(var(--sd-offset,4px) calc(var(--sd-offset,4px) * -1) 0 var(--sd-color1,#ff006e)) drop-shadow(calc(var(--sd-offset,4px) * -1) var(--sd-offset,4px) 0 var(--sd-color2,#00d4ff))}
+    75%{filter:drop-shadow(calc(var(--sd-offset,4px) * -1) calc(var(--sd-offset,4px) * -1) 0 var(--sd-color2,#00d4ff)) drop-shadow(var(--sd-offset,4px) var(--sd-offset,4px) 0 var(--sd-color1,#ff006e))}
+    100%{filter:drop-shadow(var(--sd-offset,4px) var(--sd-offset,4px) 0 var(--sd-color1,#ff006e)) drop-shadow(calc(var(--sd-offset,4px) * -1) calc(var(--sd-offset,4px) * -1) 0 var(--sd-color2,#00d4ff))}
+}
 @keyframes zoomIn { 0%{opacity:0;transform:scale(3);filter:blur(10px)} 100%{opacity:1;transform:scale(1);filter:blur(0)} }
 
 @media (max-width:768px) {
