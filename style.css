@@ -123,27 +123,19 @@ footer { text-align:center; padding:2rem; color:#444; font-size:0.75rem; border-
 /* Stage Actions */
 .stage-actions { display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap; margin-top:0.8rem; }
 
-/* Masking Section */
-.masking-section {
-    background:rgba(255,255,255,0.03); border:1px solid rgba(102,126,234,0.2);
-    border-radius:12px; padding:1.5rem;
-}
-.masking-desc { color:#888; font-size:0.8rem; margin-bottom:1rem; }
-.masking-input-wrap { margin-bottom:1rem; }
-.masking-text {
-    width:100%; min-height:60px; padding:1rem; background:rgba(0,0,0,0.3);
-    border:1px solid rgba(255,255,255,0.1); border-radius:8px;
-    color:#fff; font-size:1.2rem; font-family:'BAEMINWORK',sans-serif; line-height:1.8;
-    outline:none; user-select:text; cursor:text;
-}
-.masking-text .masked { background:rgba(255,0,110,0.3); border-radius:3px; padding:0 2px; }
-.masking-controls { display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:1rem; }
-.masking-preview {
-    min-height:80px; margin-top:1rem; padding:1.5rem;
-    background:rgba(0,0,0,0.2); border-radius:10px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:1.5rem; font-family:'BAEMINWORK',sans-serif; color:#fff;
-}
+/* Masking / Composition Section */
+.compose-editor { display:flex; flex-direction:column; gap:1.2rem; }
+.compose-section { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem; }
+.compose-upload { width:100%; padding:1rem; border:2px dashed rgba(0,212,255,0.2); border-radius:8px; text-align:center; cursor:pointer; color:#888; font-size:0.85rem; transition:all 0.3s; }
+.compose-upload:hover { border-color:#00d4ff; color:#00d4ff; }
+.compose-img-preview { position:relative; margin-top:0.5rem; border-radius:8px; overflow:hidden; }
+.compose-img-preview img { width:100%; max-height:150px; object-fit:contain; display:block; background:rgba(0,0,0,0.2); }
+.compose-controls { display:flex; flex-wrap:wrap; gap:0.8rem; margin-top:0.8rem; }
+.compose-text-input { width:100%; padding:0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:0.9rem; font-family:'BAEMINWORK',sans-serif; outline:none; margin-top:0.5rem; }
+.compose-text-input:focus { border-color:#00d4ff; }
+.compose-preview { margin-top:1rem; min-height:300px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:12px; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.compose-preview .comp-img { position:absolute; }
+.compose-preview .comp-txt { position:absolute; font-family:'BAEMINWORK',sans-serif; color:#fff; white-space:nowrap; }
 
 /* ===== ANIMATIONS ===== */
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
@@ -243,6 +235,18 @@ footer { text-align:center; padding:2rem; color:#444; font-size:0.75rem; border-
     100%{filter:drop-shadow(var(--sd-offset,4px) var(--sd-offset,4px) 0 var(--sd-color1,#ff006e)) drop-shadow(calc(var(--sd-offset,4px) * -1) calc(var(--sd-offset,4px) * -1) 0 var(--sd-color2,#00d4ff))}
 }
 @keyframes zoomIn { 0%{opacity:0;transform:scale(3);filter:blur(10px)} 100%{opacity:1;transform:scale(1);filter:blur(0)} }
+
+/* === BRANDING MOTIONS === */
+@keyframes cinematicReveal { 0%{clip-path:inset(0 100% 0 0);opacity:0} 100%{clip-path:inset(0 0 0 0);opacity:1} }
+@keyframes splitReveal { 0%{clip-path:inset(50% 0 50% 0);opacity:0} 100%{clip-path:inset(0 0 0 0);opacity:1} }
+@keyframes kineticSlideUp { 0%{opacity:0;transform:translateY(40px)} 100%{opacity:1;transform:translateY(0)} }
+@keyframes kineticSlideDown { 0%{opacity:0;transform:translateY(-40px)} 100%{opacity:1;transform:translateY(0)} }
+@keyframes kineticSlideLeft { 0%{opacity:0;transform:translateX(40px)} 100%{opacity:1;transform:translateX(0)} }
+@keyframes kineticSlideRight { 0%{opacity:0;transform:translateX(-40px)} 100%{opacity:1;transform:translateX(0)} }
+@keyframes strokeDraw { 0%{opacity:0;clip-path:inset(0 100% 0 0)} 50%{opacity:1;clip-path:inset(0 0 0 0)} 100%{opacity:1;color:#fff;-webkit-text-stroke-color:transparent} }
+@keyframes scaleBounce { 0%{opacity:0;transform:scale(0)} 60%{opacity:1;transform:scale(1.2)} 80%{transform:scale(0.95)} 100%{opacity:1;transform:scale(1)} }
+@keyframes rotateIn { 0%{opacity:0;transform:rotate(var(--rot-angle,90deg)) scale(var(--rot-scale,0.5))} 100%{opacity:1;transform:rotate(0) scale(1)} }
+@keyframes parallaxFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(calc(var(--par-dist,20px) * -1))} }
 
 @media (max-width:768px) {
     main{padding:1.5rem 1rem 3rem}

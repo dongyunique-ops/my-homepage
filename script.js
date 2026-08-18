@@ -184,6 +184,49 @@ const MOTIONS = [
         {id:'color',label:'텍스트색상',type:'color',default:'#a0ffd0'},
         {id:'iterations',label:'반복',type:'select',options:['infinite','3','5','10'],labels:['무한','3회','5회','10회'],default:'infinite'}
     ]},
+    { id:'cinematic-reveal', name:'Cinematic Reveal', tag:'브랜딩', params:[
+        {id:'duration',label:'지속시간',min:0.5,max:5,step:0.1,default:2,unit:'s'},
+        {id:'direction',label:'방향',type:'select',options:['left','right','center','top','bottom'],labels:['왼쪽→','오른쪽→','중앙→','위→','아래→'],default:'left'},
+        {id:'easing',label:'이징',type:'select',options:['cubic-bezier(0.77,0,0.175,1)','ease','cubic-bezier(0.16,1,0.3,1)'],labels:['Circ','Ease','Expo'],default:'cubic-bezier(0.77,0,0.175,1)'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.3,unit:'s'}
+    ]},
+    { id:'split-reveal', name:'Split Reveal', tag:'브랜딩', params:[
+        {id:'duration',label:'지속시간',min:0.5,max:4,step:0.1,default:1.5,unit:'s'},
+        {id:'gap',label:'벌어짐',min:5,max:100,step:5,default:30,unit:'px'},
+        {id:'easing',label:'이징',type:'select',options:['cubic-bezier(0.77,0,0.175,1)','ease-out','cubic-bezier(0.16,1,0.3,1)'],labels:['Circ','Ease Out','Expo'],default:'cubic-bezier(0.77,0,0.175,1)'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:0.5,step:0.05,default:0.15,unit:'s'}
+    ]},
+    { id:'kinetic-slide', name:'Kinetic Slide', tag:'브랜딩', params:[
+        {id:'duration',label:'지속시간',min:0.3,max:3,step:0.1,default:1,unit:'s'},
+        {id:'overshoot',label:'오버슈트',min:0,max:30,step:2,default:10,unit:'px'},
+        {id:'stagger',label:'단어간격',min:0.05,max:0.3,step:0.01,default:0.1,unit:'s'},
+        {id:'direction',label:'방향',type:'select',options:['up','down','left','right'],labels:['위로','아래로','왼쪽','오른쪽'],default:'up'}
+    ]},
+    { id:'stroke-draw', name:'Stroke Draw', tag:'브랜딩', params:[
+        {id:'duration',label:'지속시간',min:0.5,max:5,step:0.1,default:2,unit:'s'},
+        {id:'color',label:'선 색상',type:'color',default:'#00d4ff'},
+        {id:'thickness',label:'선 두께',min:1,max:5,step:0.5,default:2,unit:'px'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:1,step:0.05,default:0.3,unit:'s'}
+    ]},
+    { id:'scale-bounce', name:'Scale Bounce', tag:'브랜딩', params:[
+        {id:'duration',label:'지속시간',min:0.3,max:3,step:0.1,default:0.8,unit:'s'},
+        {id:'startScale',label:'시작크기',min:0,max:3,step:0.1,default:0,unit:'x'},
+        {id:'overshoot',label:'오버슈트',min:1,max:2,step:0.05,default:1.2,unit:'x'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:0.5,step:0.05,default:0.15,unit:'s'}
+    ]},
+    { id:'rotate-in', name:'Rotate In', tag:'브랜딩', params:[
+        {id:'duration',label:'지속시간',min:0.3,max:3,step:0.1,default:1.2,unit:'s'},
+        {id:'angle',label:'회전각',min:15,max:180,step:5,default:90,unit:'°'},
+        {id:'scale',label:'시작크기',min:0,max:1,step:0.1,default:0.5,unit:'x'},
+        {id:'easing',label:'이징',type:'select',options:['cubic-bezier(0.34,1.56,0.64,1)','ease-out','cubic-bezier(0.16,1,0.3,1)'],labels:['Overshoot','Ease Out','Expo'],default:'cubic-bezier(0.34,1.56,0.64,1)'},
+        {id:'lineDelay',label:'줄 간격',min:0,max:0.5,step:0.05,default:0.2,unit:'s'}
+    ]},
+    { id:'parallax-layers', name:'Parallax', tag:'브랜딩', params:[
+        {id:'speed',label:'속도',min:1,max:6,step:0.5,default:3,unit:'s'},
+        {id:'distance',label:'이동거리',min:5,max:50,step:5,default:20,unit:'px'},
+        {id:'stagger',label:'글자간격',min:0.02,max:0.15,step:0.01,default:0.05,unit:'s'},
+        {id:'iterations',label:'반복',type:'select',options:['infinite','1','2','3'],labels:['무한','1회','2회','3회'],default:'infinite'}
+    ]},
 ];
 
 // === STATE ===
@@ -199,13 +242,9 @@ document.querySelectorAll('.tab').forEach(tab => {
         const panelId = `panel-${tab.dataset.tab}`;
         const panel = document.getElementById(panelId);
         if (panel) panel.classList.add('active');
-        // Show/hide masking section
-        document.getElementById('maskingSection').style.display = tab.dataset.tab === 'masking' ? 'block' : 'none';
-        if (tab.dataset.tab === 'masking') {
-            const text = getCurrentTextRaw() || '배달의민족 텍스트 모션';
-            const maskText = document.getElementById('maskingText');
-            maskText.textContent = text;
-            enableMaskSelection(maskText);
+        // Update compose preview when switching to compose tab
+        if (tab.dataset.tab === 'compose') {
+            updateComposePreview();
         }
     });
 });
@@ -372,6 +411,11 @@ function liveUpdate() {
     stage.innerHTML = '';
     document.getElementById('replayBtn').style.display = 'inline-block';
     document.getElementById('exportBtn').style.display = 'inline-block';
+
+    if (activeTab === 'compose') {
+        updateComposePreview();
+        return;
+    }
 
     if (activeTab === 'image' && uploadedImageSrc) {
         // Image motion mode
@@ -601,6 +645,54 @@ function applyEffect(el, motion, line, idx, p) {
                 s.style.setProperty('--ripple-x',`${p.heightX||2}px`);
                 s.style.setProperty('--ripple-skew',`${p.skew||3}deg`);
                 s.style.animationIterationCount=p.iterations||'infinite';
+                el.appendChild(s);
+            });
+            break;
+        case 'cinematic-reveal':
+            el.style.overflow='hidden';
+            el.style.animation=`cinematicReveal ${p.duration||2}s ${p.easing||'cubic-bezier(0.77,0,0.175,1)'} ${delay}s both`;
+            el.style.setProperty('--reveal-dir', p.direction||'left');
+            break;
+        case 'split-reveal':
+            el.style.overflow='hidden';
+            el.style.animation=`splitReveal ${p.duration||1.5}s ${p.easing||'cubic-bezier(0.77,0,0.175,1)'} ${delay}s both`;
+            break;
+        case 'kinetic-slide':
+            el.textContent='';
+            const words = line.split(' ');
+            words.forEach((word, wi) => {
+                const span = document.createElement('span');
+                span.textContent = word + ' ';
+                span.style.display='inline-block';
+                span.style.opacity='0';
+                span.style.animation=`kineticSlide${(p.direction||'up').charAt(0).toUpperCase()+(p.direction||'up').slice(1)} ${p.duration||1}s cubic-bezier(0.16,1,0.3,1) ${delay + wi*(p.stagger||0.1)}s forwards`;
+                el.appendChild(span);
+            });
+            break;
+        case 'stroke-draw':
+            el.style.color='transparent';
+            el.style.webkitTextStroke=`${p.thickness||2}px ${p.color||'#00d4ff'}`;
+            el.style.animation=`strokeDraw ${p.duration||2}s ease ${delay}s both`;
+            break;
+        case 'scale-bounce':
+            el.style.opacity='0';
+            el.style.transform='scale(0)';
+            el.style.animation=`scaleBounce ${p.duration||0.8}s cubic-bezier(0.34,1.56,0.64,1) ${delay}s forwards`;
+            break;
+        case 'rotate-in':
+            el.style.opacity='0';
+            el.style.animation=`rotateIn ${p.duration||1.2}s ${p.easing||'cubic-bezier(0.34,1.56,0.64,1)'} ${delay}s forwards`;
+            el.style.setProperty('--rot-angle',`${p.angle||90}deg`);
+            el.style.setProperty('--rot-scale',p.scale||0.5);
+            break;
+        case 'parallax-layers':
+            el.textContent='';
+            line.split('').forEach((c,i) => {
+                const s=document.createElement('span'); s.textContent=c===' '?'\u00A0':c;
+                s.style.display='inline-block';
+                s.style.animation=`parallaxFloat ${p.speed||3}s ease-in-out ${p.iterations||'infinite'}`;
+                s.style.animationDelay=`${i*(p.stagger||0.05)}s`;
+                s.style.setProperty('--par-dist',`${p.distance||20}px`);
                 el.appendChild(s);
             });
             break;
@@ -1083,88 +1175,97 @@ function estimateDuration() {
     return Math.min(Math.max(dur + 0.5, 2), 12);
 }
 
-// === MASKING FEATURE ===
-const maskingSection = document.getElementById('maskingSection');
-let maskSelection = { start: 0, end: 0 };
+// === COMPOSITION TAB ===
+let composeImageSrc = null;
 
-document.getElementById('maskingClose').addEventListener('click', () => {
-    maskingSection.style.display = 'none';
+const composeUpload = document.getElementById('composeUpload');
+const composeImageInput = document.getElementById('composeImageInput');
+const composeImgPreview = document.getElementById('composeImgPreview');
+const composeImg = document.getElementById('composeImg');
+const composeImgRemove = document.getElementById('composeImgRemove');
+
+composeUpload.addEventListener('click', () => composeImageInput.click());
+composeImageInput.addEventListener('change', e => {
+    if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            composeImg.src = ev.target.result;
+            composeImageSrc = ev.target.result;
+            composeUpload.style.display = 'none';
+            composeImgPreview.style.display = 'block';
+            updateComposePreview();
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    }
+});
+composeImgRemove.addEventListener('click', () => {
+    composeUpload.style.display = 'block';
+    composeImgPreview.style.display = 'none';
+    composeImageSrc = null;
+    updateComposePreview();
 });
 
-function enableMaskSelection(el) {
-    el.addEventListener('mouseup', () => {
-        const sel = window.getSelection();
-        if (sel.rangeCount > 0 && sel.toString().length > 0) {
-            const range = sel.getRangeAt(0);
-            // Highlight selection
-            const text = el.textContent;
-            const selText = sel.toString();
-            const startIdx = text.indexOf(selText);
-            if (startIdx >= 0) {
-                maskSelection = { start: startIdx, end: startIdx + selText.length };
-                el.innerHTML = text.substring(0, startIdx) +
-                    `<span class="masked">${selText}</span>` +
-                    text.substring(startIdx + selText.length);
-            }
-        }
-    });
-}
-
-// Masking param controls
-['maskStart','maskHideDur','maskHold','maskShowDur'].forEach(id => {
+// Compose controls live update
+['imgX','imgY','imgScale','txtX','txtY','txtSize'].forEach(id => {
     const el = document.getElementById(id);
+    if (!el) return;
     el.addEventListener('input', () => {
-        document.getElementById(id+'Val').textContent = el.value + 's';
+        const valEl = document.getElementById(id+'Val');
+        if (valEl) valEl.textContent = id === 'txtSize' ? el.value+'rem' : el.value+'%';
+        updateComposePreview();
     });
 });
+document.getElementById('txtColor')?.addEventListener('input', () => updateComposePreview());
+document.getElementById('composeText')?.addEventListener('input', () => updateComposePreview());
 
-document.getElementById('applyMasking').addEventListener('click', () => {
-    const text = document.getElementById('maskingText').textContent;
-    if (!text || maskSelection.start === maskSelection.end) return;
+function updateComposePreview() {
+    const preview = document.getElementById('composePreview');
+    if (!preview) return;
+    preview.innerHTML = '';
 
-    const preview = document.getElementById('maskingPreview');
-    const font = document.getElementById('fontSelect').value;
-    const maskStart = parseFloat(document.getElementById('maskStart').value);
-    const hideDur = parseFloat(document.getElementById('maskHideDur').value);
-    const hold = parseFloat(document.getElementById('maskHold').value);
-    const showDur = parseFloat(document.getElementById('maskShowDur').value);
-    const style = document.getElementById('maskStyle').value;
-    const easing = document.getElementById('maskEasing').value;
+    const imgX = document.getElementById('imgX')?.value || 50;
+    const imgY = document.getElementById('imgY')?.value || 30;
+    const imgScale = document.getElementById('imgScale')?.value || 80;
+    const txtX = document.getElementById('txtX')?.value || 50;
+    const txtY = document.getElementById('txtY')?.value || 70;
+    const txtSize = document.getElementById('txtSize')?.value || 3;
+    const txtColor = document.getElementById('txtColor')?.value || '#ffffff';
+    const text = document.getElementById('composeText')?.value || '';
 
-    const before = text.substring(0, maskSelection.start);
-    const masked = text.substring(maskSelection.start, maskSelection.end);
-    const after = text.substring(maskSelection.end);
+    if (composeImageSrc) {
+        const img = document.createElement('img');
+        img.src = composeImageSrc;
+        img.className = 'comp-img';
+        img.style.left = `${imgX}%`;
+        img.style.top = `${imgY}%`;
+        img.style.transform = 'translate(-50%,-50%)';
+        img.style.width = `${imgScale}%`;
+        img.style.maxHeight = '80%';
+        img.style.objectFit = 'contain';
 
-    const totalDur = maskStart + hideDur + hold + showDur;
-
-    // Build CSS animation
-    const hideEnd = ((maskStart + hideDur) / totalDur * 100).toFixed(1);
-    const holdEnd = ((maskStart + hideDur + hold) / totalDur * 100).toFixed(1);
-    const showEnd = 100;
-    const startPct = ((maskStart) / totalDur * 100).toFixed(1);
-
-    let hideStyle = '', showStyle = '', hiddenStyle = '';
-    switch(style) {
-        case 'opacity': hideStyle='opacity:0'; showStyle='opacity:1'; hiddenStyle='opacity:0'; break;
-        case 'blur': hideStyle='opacity:0;filter:blur(10px)'; showStyle='opacity:1;filter:blur(0)'; hiddenStyle='opacity:0;filter:blur(10px)'; break;
-        case 'scale': hideStyle='transform:scale(0);opacity:0'; showStyle='transform:scale(1);opacity:1'; hiddenStyle='transform:scale(0);opacity:0'; break;
-        case 'slide-up': hideStyle='transform:translateY(-20px);opacity:0'; showStyle='transform:translateY(0);opacity:1'; hiddenStyle='transform:translateY(-20px);opacity:0'; break;
-        case 'clip': hideStyle='clip-path:inset(0 100% 0 0)'; showStyle='clip-path:inset(0 0 0 0)'; hiddenStyle='clip-path:inset(0 100% 0 0)'; break;
-        case 'glitch': hideStyle='opacity:0;transform:translateX(5px)'; showStyle='opacity:1;transform:translateX(0)'; hiddenStyle='opacity:0;transform:translateX(-5px)'; break;
+        if (selectedMotion) applyEffectToElement(preview, img, selectedMotion.id, motionParams);
+        preview.appendChild(img);
     }
 
-    const animName = 'maskAnim' + Date.now();
-    const keyframes = `@keyframes ${animName} {
-        0%, ${startPct}% { ${showStyle} }
-        ${hideEnd}% { ${hiddenStyle} }
-        ${holdEnd}% { ${hiddenStyle} }
-        ${showEnd}% { ${showStyle} }
-    }`;
+    if (text) {
+        const txt = document.createElement('div');
+        txt.className = 'comp-txt font-work';
+        txt.textContent = text;
+        txt.style.left = `${txtX}%`;
+        txt.style.top = `${txtY}%`;
+        txt.style.transform = 'translate(-50%,-50%)';
+        txt.style.fontSize = `${txtSize}rem`;
+        txt.style.color = txtColor;
 
-    // Inject keyframes
-    const styleEl = document.createElement('style');
-    styleEl.textContent = keyframes;
-    document.head.appendChild(styleEl);
+        if (selectedMotion) {
+            const el = txt;
+            applyEffect(el, selectedMotion.id, text, 0, motionParams);
+        }
+        preview.appendChild(txt);
+    }
 
-    preview.innerHTML = `<span class="${font}">${before}<span style="display:inline-block;animation:${animName} ${totalDur}s ${easing} infinite">${masked}</span>${after}</span>`;
-});
+    if (!composeImageSrc && !text) {
+        preview.innerHTML = '<p class="stage-placeholder">이미지와 텍스트를 추가하세요</p>';
+    }
+}
+
