@@ -209,6 +209,14 @@ footer { text-align:center; padding:2rem; color:#444; font-size:0.75rem; border-
     50%{transform:translate(0,0) skewX(0)}
     75%{transform:translate(calc(var(--ripple-x,2px) * -1),var(--ripple-y,6px)) skewX(calc(var(--ripple-skew,3deg) * -1))}
 }
+
+/* Water Ripple for image */
+@keyframes waterRippleImg {
+    0%,100%{transform:translate(0,0) skewX(0) scaleY(1)}
+    25%{transform:translate(var(--ripple-x,2px),calc(var(--ripple-y,6px) * -1)) skewX(var(--ripple-skew,3deg)) scaleY(0.98)}
+    50%{transform:translate(0,0) skewX(0) scaleY(1)}
+    75%{transform:translate(calc(var(--ripple-x,2px) * -1),var(--ripple-y,6px)) skewX(calc(var(--ripple-skew,3deg) * -1)) scaleY(1.02)}
+}
 @keyframes zoomIn { 0%{opacity:0;transform:scale(3);filter:blur(10px)} 100%{opacity:1;transform:scale(1);filter:blur(0)} }
 
 @media (max-width:768px) {

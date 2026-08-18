@@ -365,23 +365,72 @@ function selectMotion(motion) {
 
 // Live update preview when params change
 function liveUpdate() {
-    const text = getCurrentText();
-    if (!text || !selectedMotion) return;
-    const font = document.getElementById('fontSelect').value;
-    const fontSize = document.getElementById('fontSizeRange').value;
-    const lines = text.split('\n').filter(l => l.trim());
+    if (!selectedMotion) return;
+
+    const activeTab = document.querySelector('.tab.active').dataset.tab;
     const stage = document.getElementById('previewStage');
     stage.innerHTML = '';
     document.getElementById('replayBtn').style.display = 'inline-block';
     document.getElementById('exportBtn').style.display = 'inline-block';
-    lines.forEach((line, idx) => {
+
+    if (activeTab === 'image' && uploadedImageSrc) {
+        // Image motion mode
+        const font = document.getElementById('fontSelect').value;
         const el = document.createElement('div');
-        el.className = `motion-line ${font}`;
-        el.style.fontSize = `${fontSize}rem`;
-        el.textContent = line;
-        applyEffect(el, selectedMotion.id, line, idx, motionParams);
+        el.className = 'motion-line';
+        const img = document.createElement('img');
+        img.src = uploadedImageSrc;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '300px';
+        img.style.display = 'block';
+        el.appendChild(img);
+        applyEffectToElement(el, selectedMotion.id, motionParams);
         stage.appendChild(el);
-    });
+    } else {
+        // Text motion mode
+        const text = getCurrentText();
+        if (!text) return;
+        const font = document.getElementById('fontSelect').value;
+        const fontSize = document.getElementById('fontSizeRange').value;
+        const lines = text.split('\n').filter(l => l.trim());
+        lines.forEach((line, idx) => {
+            const el = document.createElement('div');
+            el.className = `motion-line ${font}`;
+            el.style.fontSize = `${fontSize}rem`;
+            el.textContent = line;
+            applyEffect(el, selectedMotion.id, line, idx, motionParams);
+            stage.appendChild(el);
+        });
+    }
+}
+
+// Apply motion to image element
+function applyEffectToElement(el, motion, p) {
+    const delay = 0;
+    switch(motion) {
+        case 'fade-in': el.style.opacity='0'; el.style.animation=`fadeIn ${p.duration||1.2}s ${p.easing||'ease'} ${delay}s forwards`; break;
+        case 'fade-in-up': el.style.opacity='0'; el.style.animation=`fadeInUp ${p.duration||1.2}s ${p.easing||'ease'} forwards`; break;
+        case 'fade-in-scale': el.style.opacity='0'; el.style.animation=`fadeInScale ${p.duration||1.2}s ${p.easing||'ease'} forwards`; break;
+        case 'slide-left': el.style.opacity='0'; el.style.animation=`slideLeft ${p.duration||0.8}s ${p.easing||'ease'} forwards`; break;
+        case 'slide-right': el.style.opacity='0'; el.style.animation=`slideRight ${p.duration||0.8}s ${p.easing||'ease'} forwards`; break;
+        case 'blur-reveal': el.style.opacity='0'; el.style.animation=`blurReveal ${p.duration||1.5}s ${p.easing||'ease'} forwards`; break;
+        case 'drop-in': el.style.opacity='0'; el.style.animation=`dropIn ${p.duration||0.7}s ${p.easing||'ease'} forwards`; break;
+        case 'zoom-effect': el.style.opacity='0'; el.style.animation=`zoomIn ${p.duration||0.8}s ${p.easing||'ease'} forwards`; break;
+        case 'neon-effect': el.style.animation=`neonFlicker ${p.speed||2}s ease-in-out ${p.iterations||'infinite'} alternate`; break;
+        case 'pulse-effect': el.style.animation=`pulse ${p.speed||1.5}s ease-in-out ${p.iterations||'infinite'}`; break;
+        case 'shake-effect': el.style.animation=`shakeIt ${p.duration||0.6}s ease both`; el.style.animationIterationCount=p.iterations||'1'; break;
+        case 'shadow-dance': el.style.animation=`shadowDance ${p.speed||2}s ease-in-out ${p.iterations||'infinite'}`; break;
+        case 'flicker-effect': el.style.animation=`flicker ${p.speed||1.5}s linear ${p.iterations||'infinite'}`; break;
+        case 'water-ripple':
+            el.style.animation=`waterRippleImg ${p.speed||1.5}s ease-in-out ${p.iterations||'infinite'}`;
+            el.style.setProperty('--ripple-y',`${p.heightY||6}px`);
+            el.style.setProperty('--ripple-x',`${p.heightX||2}px`);
+            el.style.setProperty('--ripple-skew',`${p.skew||3}deg`);
+            break;
+        default:
+            el.style.animation=`fadeIn ${p.duration||1.2}s ease forwards`;
+            break;
+    }
 }
 
 document.getElementById('detailClose').addEventListener('click', () => {
@@ -396,37 +445,25 @@ const imageInput = document.getElementById('imageInput');
 const imagePreview = document.getElementById('imagePreview');
 const previewImg = document.getElementById('previewImg');
 const removeImg = document.getElementById('removeImg');
-const ocrProgress = document.getElementById('ocrProgress');
-const progressFill = document.getElementById('progressFill');
-const progressText = document.getElementById('progressText');
-const ocrResult = document.getElementById('ocrResult');
-const ocrText = document.getElementById('ocrText');
 
 uploadArea.addEventListener('click', () => imageInput.click());
 uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
 uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
 uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')) processImage(f); });
 imageInput.addEventListener('change', e => { if(e.target.files[0]) processImage(e.target.files[0]); });
-removeImg.addEventListener('click', () => { uploadArea.style.display='block'; imagePreview.style.display='none'; ocrProgress.style.display='none'; ocrResult.style.display='none'; imageInput.value=''; });
+removeImg.addEventListener('click', () => { uploadArea.style.display='block'; imagePreview.style.display='none'; imageInput.value=''; uploadedImageSrc=null; });
+
+let uploadedImageSrc = null;
 
 function processImage(file) {
     const reader = new FileReader();
-    reader.onload = e => { previewImg.src=e.target.result; uploadArea.style.display='none'; imagePreview.style.display='block'; performOCR(e.target.result); };
+    reader.onload = e => {
+        previewImg.src = e.target.result;
+        uploadedImageSrc = e.target.result;
+        uploadArea.style.display = 'none';
+        imagePreview.style.display = 'block';
+    };
     reader.readAsDataURL(file);
-}
-async function performOCR(img) {
-    ocrProgress.style.display='block'; ocrResult.style.display='none';
-    progressFill.style.width='0%'; progressFill.style.background='linear-gradient(90deg,#00d4ff,#667eea)';
-    progressText.textContent='준비 중...';
-    try {
-        const r = await Tesseract.recognize(img,'kor+eng',{logger:m=>{
-            if(m.status==='recognizing text'){const p=Math.round(m.progress*100);progressFill.style.width=`${p}%`;progressText.textContent=`인식 중... ${p}%`;}
-            else if(m.status==='loading language traineddata'){progressText.textContent='한국어 데이터 로딩...';progressFill.style.width='20%';}
-        }});
-        const t=r.data.text.trim();
-        if(t){ocrText.value=t;ocrProgress.style.display='none';ocrResult.style.display='block';}
-        else{progressText.textContent='텍스트를 찾을 수 없습니다.';progressFill.style.width='100%';progressFill.style.background='#ff006e';}
-    }catch(e){progressText.textContent='오류 발생';progressFill.style.background='#ff006e';}
 }
 
 // === FONT SIZE ===
@@ -438,13 +475,11 @@ document.getElementById('applyMotion').addEventListener('click', liveUpdate);
 document.getElementById('replayBtn').addEventListener('click', liveUpdate);
 
 function getCurrentText() {
-    const tab = document.querySelector('.tab.active').dataset.tab;
-    if (tab === 'image') return document.getElementById('ocrText').value.trim();
     return document.getElementById('textInput').value.trim();
 }
 
 function getCurrentTextRaw() {
-    return document.getElementById('textInput').value.trim() || document.getElementById('ocrText').value.trim();
+    return document.getElementById('textInput').value.trim();
 }
 
 function applyMotionToText() {
