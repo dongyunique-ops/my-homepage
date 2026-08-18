@@ -416,7 +416,12 @@ function applyEffectToElement(el, motion, p) {
         case 'blur-reveal': el.style.opacity='0'; el.style.animation=`blurReveal ${p.duration||1.5}s ${p.easing||'ease'} forwards`; break;
         case 'drop-in': el.style.opacity='0'; el.style.animation=`dropIn ${p.duration||0.7}s ${p.easing||'ease'} forwards`; break;
         case 'zoom-effect': el.style.opacity='0'; el.style.animation=`zoomIn ${p.duration||0.8}s ${p.easing||'ease'} forwards`; break;
-        case 'neon-effect': el.style.animation=`neonFlicker ${p.speed||2}s ease-in-out ${p.iterations||'infinite'} alternate`; break;
+        case 'neon-effect':
+            el.style.animation=`neonImgFlicker ${p.speed||2}s ease-in-out ${p.iterations||'infinite'} alternate`;
+            el.style.setProperty('--neon-color1', p.color1||'#00d4ff');
+            el.style.setProperty('--neon-color2', p.color2||'#00ffaa');
+            el.style.setProperty('--neon-glow', `${p.glowSize||42}px`);
+            break;
         case 'pulse-effect': el.style.animation=`pulse ${p.speed||1.5}s ease-in-out ${p.iterations||'infinite'}`; break;
         case 'shake-effect': el.style.animation=`shakeIt ${p.duration||0.6}s ease both`; el.style.animationIterationCount=p.iterations||'1'; break;
         case 'shadow-dance': el.style.animation=`shadowDance ${p.speed||2}s ease-in-out ${p.iterations||'infinite'}`; break;
@@ -426,6 +431,20 @@ function applyEffectToElement(el, motion, p) {
             el.style.setProperty('--ripple-y',`${p.heightY||6}px`);
             el.style.setProperty('--ripple-x',`${p.heightX||2}px`);
             el.style.setProperty('--ripple-skew',`${p.skew||3}deg`);
+            break;
+        case 'gradient-wave':
+            el.style.position='relative';
+            el.style.overflow='hidden';
+            const overlay = document.createElement('div');
+            overlay.style.cssText=`position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(90deg,${p.color1||'#00d4ff'}55,${p.color2||'#ff006e'}55,${p.color3||'#667eea'}55,${p.color1||'#00d4ff'}55);background-size:300% 100%;animation:gradientShift ${p.speed||3}s ease ${p.iterations||'infinite'};mix-blend-mode:overlay;pointer-events:none;`;
+            el.appendChild(overlay);
+            break;
+        case 'glitch-effect':
+            el.style.position='relative';
+            el.style.animation=`glitchText ${p.speed||2}s ${p.iterations||'infinite'}`;
+            break;
+        case 'rainbow-effect':
+            el.style.animation=`rainbowImg ${p.speed||3}s linear ${p.iterations||'infinite'}`;
             break;
         default:
             el.style.animation=`fadeIn ${p.duration||1.2}s ease forwards`;

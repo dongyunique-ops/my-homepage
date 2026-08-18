@@ -217,6 +217,22 @@ footer { text-align:center; padding:2rem; color:#444; font-size:0.75rem; border-
     50%{transform:translate(0,0) skewX(0) scaleY(1)}
     75%{transform:translate(calc(var(--ripple-x,2px) * -1),var(--ripple-y,6px)) skewX(calc(var(--ripple-skew,3deg) * -1)) scaleY(1.02)}
 }
+
+/* Neon for image (uses filter drop-shadow) */
+@keyframes neonImgFlicker {
+    0%,19%,21%,23%,25%,54%,56%,100% {
+        filter: drop-shadow(0 0 4px var(--neon-color1,#00d4ff)) drop-shadow(0 0 var(--neon-glow,42px) var(--neon-color2,#00ffaa)) brightness(1.2);
+    }
+    20%,24%,55% {
+        filter: brightness(0.6) drop-shadow(0 0 0px transparent);
+    }
+}
+
+/* Rainbow for image (hue-rotate) */
+@keyframes rainbowImg {
+    0%{filter:hue-rotate(0deg)}
+    100%{filter:hue-rotate(360deg)}
+}
 @keyframes zoomIn { 0%{opacity:0;transform:scale(3);filter:blur(10px)} 100%{opacity:1;transform:scale(1);filter:blur(0)} }
 
 @media (max-width:768px) {
