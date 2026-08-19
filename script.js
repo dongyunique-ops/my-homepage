@@ -1214,10 +1214,35 @@ function addCanvasItem(type, content) {
     } else {
         const txt = document.createElement('div');
         txt.className = 'canvas-text';
-        txt.contentEditable = 'true';
+        txt.contentEditable = 'false';
         txt.textContent = content;
         txt.style.fontSize = '2rem';
         item.appendChild(txt);
+
+        // Double click to edit
+        txt.addEventListener('dblclick', e => {
+            e.stopPropagation();
+            txt.contentEditable = 'true';
+            txt.focus();
+            // Select all text
+            const range = document.createRange();
+            range.selectNodeContents(txt);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        });
+
+        // Exit edit mode on blur or Enter
+        txt.addEventListener('blur', () => {
+            txt.contentEditable = 'false';
+        });
+        txt.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                txt.contentEditable = 'false';
+                txt.blur();
+            }
+        });
     }
 
     // Resize handle
@@ -1250,7 +1275,7 @@ function makeDraggable(el, resizeHandle) {
 
     el.addEventListener('mousedown', e => {
         if (e.target === resizeHandle) return;
-        if (e.target.contentEditable === 'true' && document.activeElement === e.target) return;
+        if (e.target.classList?.contains('canvas-text') && e.target.contentEditable === 'true') return;
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
